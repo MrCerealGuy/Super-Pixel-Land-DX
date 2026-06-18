@@ -943,6 +943,7 @@ function setupInput() {
     if (e.key==='ArrowLeft') keys.left=true;
     if (e.key==='ArrowRight') keys.right=true;
     if (e.key===' '||e.key==='ArrowUp'){keys.jump=true;keys.jumpPressed=true;e.preventDefault();}
+    if (e.key==='f'||e.key==='F') goFullscreen();
   });
   document.addEventListener('keyup',e=>{
     if (e.key==='ArrowLeft') keys.left=false;
@@ -955,10 +956,16 @@ function setupInput() {
 function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 
 // ---- Start ----
+function goFullscreen() {
+  const el=document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen();
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+}
 function startGame() {
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('gameOverScreen').classList.add('hidden');
   resetGame();
+  goFullscreen();
 }
 
 loadHighScore();
