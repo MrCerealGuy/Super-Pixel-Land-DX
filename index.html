@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
 <title>Super Pixel Land DX</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" href="favicon.png">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-touch-callout: none; -webkit-user-select: none; }
 html, body {
@@ -529,6 +531,10 @@ function returnToMap() {
   gameRunning = true;
   gameOver = false;
   inBonusRoom = false; bonusRoomPipe = null; bonusCoins = []; bonusBlocks = [];
+  document.getElementById('restartTouchBtn').style.display='none';
+  document.getElementById('mapTouchBtn').style.display='none';
+  document.getElementById('enterBtn').style.display='none';
+  document.getElementById('controls').style.display='flex';
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.add('hidden');
 }
@@ -542,6 +548,10 @@ function update() {
     document.getElementById('controls').style.display='none';
     document.getElementById('statusBar').style.display='none';
     document.getElementById('powerUpBar').style.display='none';
+    document.getElementById('restartTouchBtn').style.display='none';
+    document.getElementById('mapTouchBtn').style.display='none';
+    document.getElementById('enterBtn').style.display='none';
+    document.getElementById('controls').style.display='flex';
     mapTimer++;
     if (keys.jumpPressed) {
       keys.jumpPressed=false;
@@ -550,7 +560,9 @@ function update() {
       } else {
         currentLevel = selectedLevel;
         gameScreen = 'playing';
-        document.getElementById('controls').style.display='';
+        document.getElementById('controls').style.display='flex';
+        document.getElementById('restartTouchBtn').style.display='';
+        document.getElementById('mapTouchBtn').style.display='';
         document.getElementById('statusBar').style.display='';
         document.getElementById('powerUpBar').style.display='';
         resetGame();
@@ -1286,58 +1298,128 @@ function drawCheckpoint(cp,cx) {
 }
 
 function drawMap() {
-  ctx.fillStyle='#1a1a2a';
-  ctx.fillRect(0,0,W,H);
-  // Draw paths between levels (connect consecutive)
+  // Sky gradient
+  const sky1='#8bac0f', sky2='#306230';
+  ctx.fillStyle=sky1; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=sky2;
+  ctx.fillRect(0,80,W,4); ctx.fillRect(0,84,W,2);
+  // Hills
   ctx.fillStyle='#306230';
+  for (let i=0; i<6; i++) {
+    const hx=i*30-5, hy=80+Math.sin(i*1.7)*4;
+    ctx.fillRect(hx,hy,8,4); ctx.fillRect(hx+2,hy-2,4,2);
+  }
+  ctx.fillStyle='#0f380f';
+  for (let i=0; i<4; i++) {
+    const hx=i*45+3, hy=90+Math.sin(i*2.3)*3;
+    ctx.fillRect(hx,hy,6,3);
+  }
+  // Clouds
+  ctx.fillStyle='#9bbc0f';
+  for (let i=0; i<3; i++) {
+    const cx=(i*55+mapTimer*0.2)%(W+20)-10;
+    ctx.fillRect(cx,10+Math.sin(i*1.1)*5,12,4);
+    ctx.fillRect(cx+3,8+Math.sin(i*1.1)*5,8,3);
+    ctx.fillRect(cx+4,6+Math.sin(i*1.1)*5,6,3);
+  }
+  // Road between levels
   for (let i=0; i<levels.length-1; i++) {
     const a=levels[i], b=levels[i+1];
     const ax=a.x+12, ay=a.y+12, bx=b.x+12, by=b.y+12;
     const dx=bx-ax, dy=by-ay;
     const len=Math.sqrt(dx*dx+dy*dy);
-    for (let t=0; t<len; t+=6) {
+    // Road shadow
+    ctx.fillStyle='#0f380f';
+    for (let t=0; t<len; t+=4) {
       const px=ax+dx*t/len, py=ay+dy*t/len;
-      ctx.fillRect(px-1,py-1,3,3);
+      ctx.fillRect(px-2,py,5,3);
     }
+    // Road surface
+    ctx.fillStyle='#8bac0f';
+    for (let t=0; t<len; t+=4) {
+      const px=ax+dx*t/len, py=ay+dy*t/len;
+      ctx.fillRect(px-1,py+1,3,1);
+    }
+    // Dotted center line
+    ctx.fillStyle='#9bbc0f';
+    for (let t=0; t<len; t+=8) {
+      const px=ax+dx*t/len, py=ay+dy*t/len;
+      ctx.fillRect(px,py+1,1,1);
+    }
+  }
+  // Trees
+  for (let i=0; i<8; i++) {
+    const tx=(i*23+7)%W, ty=80+Math.sin(i*0.9)*8;
+    ctx.fillStyle='#0f380f';
+    ctx.fillRect(tx,ty,2,6); // trunk
+    ctx.fillStyle='#306230';
+    ctx.fillRect(tx-2,ty-2,6,4); // foliage
+    ctx.fillRect(tx-1,ty-4,4,2);
   }
   // Draw level icons
   for (let i=0; i<levels.length; i++) {
     const l=levels[i];
     const lx=l.x-1, ly=l.y-1, lw=26, lh=26;
-    // Level border
-    ctx.fillStyle=l.completed?'#8bac0f':(i===0||levels[i-1].completed?'#9bbc0f':'#306230');
-    ctx.fillRect(lx,ly,lw,lh);
+    const unlocked = i===0||levels[i-1].completed;
+    const color = l.completed ? '#8bac0f' : (unlocked ? '#9bbc0f' : '#306230');
+    // Castle/base
+    ctx.fillStyle=color;
+    ctx.fillRect(lx+2,ly+6,lw-4,20);
     ctx.fillStyle='#0f380f';
-    ctx.fillRect(lx+2,ly+2,lw-4,lh-4);
-    // Level number
-    ctx.fillStyle=l.completed?'#9bbc0f':(i===0||levels[i-1].completed?'#8bac0f':'#306230');
-    drawPixelText(''+(i+1),lx+10,ly+10,l.completed?'#9bbc0f':(i===0||levels[i-1].completed?'#8bac0f':'#306230'));
-    // Checkmark if completed
+    ctx.fillRect(lx+4,ly+8,lw-8,16);
+    // Tower top
+    ctx.fillStyle=color;
+    ctx.fillRect(lx+6,ly,lw-12,8);
+    ctx.fillRect(lx+4,ly+2,lw-8,2);
+    // Upper tower
+    ctx.fillStyle=l.completed?'#9bbc0f':(unlocked?'#8bac0f':'#1a4a1a');
+    ctx.fillRect(lx+8,ly-2,lw-16,4);
+    ctx.fillRect(lx+9,ly-4,lw-18,2);
+    // Flag if completed
     if (l.completed) {
       ctx.fillStyle='#9bbc0f';
-      ctx.fillRect(lx+8,ly+17,2,5);
-      ctx.fillRect(lx+10,ly+19,5,2);
+      ctx.fillRect(lx+14,ly-8,2,8); // pole
+      ctx.fillStyle='#a02020';
+      ctx.fillRect(lx+16,ly-8,5,4); // flag
     }
+    // Windows
+    if (unlocked) {
+      ctx.fillStyle=l.completed?'#9bbc0f':'#306230';
+      ctx.fillRect(lx+8,ly+12,3,3);
+      ctx.fillRect(lx+15,ly+12,3,3);
+      ctx.fillRect(lx+8,ly+18,3,3);
+      ctx.fillRect(lx+15,ly+18,3,3);
+    }
+    // Door
+    ctx.fillStyle='#0f380f';
+    ctx.fillRect(lx+10,ly+20,6,5);
+    ctx.fillStyle=color;
+    ctx.fillRect(lx+12,ly+22,2,2);
   }
-  // Draw player cursor
+  // Player character on map
   const sl=levels[selectedLevel];
   const cx=sl.x+12, cy=sl.y+12;
   const bob=Math.sin(mapTimer*0.08)*3;
-  // Arrow above selected
+  // Body (Mario-like)
+  ctx.fillStyle='#306230';
+  ctx.fillRect(cx-4,cy-15+bob,8,3); // hat
   ctx.fillStyle='#9bbc0f';
-  ctx.fillRect(cx-3,cy-26+bob,7,2);
-  ctx.fillRect(cx-2,cy-24+bob,5,3);
-  ctx.fillRect(cx-1,cy-22+bob,3,4);
+  ctx.fillRect(cx-3,cy-12+bob,6,4); // head
+  ctx.fillStyle='#a02020';
+  ctx.fillRect(cx-3,cy-8+bob,6,5); // body
+  ctx.fillStyle='#306230';
+  ctx.fillRect(cx-2,cy-3+bob,4,5); // legs
+  // Eyes
+  ctx.fillStyle='#0f380f';
+  ctx.fillRect(cx+1,cy-11+bob,1,1);
   // Level name at bottom
   ctx.fillStyle='#0f380f';
-  ctx.fillRect(10,H-24,W-20,18);
-  ctx.fillStyle='#306230';
-  ctx.fillRect(12,H-22,W-24,14);
+  ctx.fillRect(8,H-20,W-16,14);
   ctx.fillStyle='#9bbc0f';
-  drawPixelText(sl.name, 20, H-20, '#9bbc0f');
+  drawPixelText(sl.name,14,H-18,'#0f380f');
   // Controls hint
   ctx.fillStyle='#8bac0f';
-  drawPixelText('PFEIL+SPRUNG', 30, H-8, '#8bac0f');
+  drawPixelText('PFEIL+SPRUNG',28,H-8,'#306230');
 }
 
 function draw() {
