@@ -12,13 +12,16 @@ html, body {
 }
 canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%; height: 100%; }
 #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-#controls { position: absolute; bottom: 10px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 10px; pointer-events: none; }
+#controls { position: absolute; bottom: 10px; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 10px; pointer-events: none; }
 #controls button { pointer-events: auto; font-size: 28px; padding: 12px 20px; border: 3px solid #306230; border-radius: 12px; background: rgba(48,98,48,0.7); color: #9bbc0f; font-family: monospace; font-weight: bold; min-width: 64px; touch-action: none; -webkit-tap-highlight-color: transparent; }
 #controls button:active { background: #306230; }
+#leftGroup { display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+#leftGroup * { pointer-events: auto; }
 #dpad { display: flex; gap: 6px; }
 #dpad button { min-width: 70px; font-size: 30px; padding: 14px 10px; }
 #jumpBtn { min-width: 90px; font-size: 24px; padding: 14px 10px; background: rgba(48,98,48,0.85); }
 #restartTouchBtn { min-width: 54px; font-size: 22px; padding: 10px 8px; background: rgba(160,32,32,0.5); }
+#mapTouchBtn { min-width: 54px; font-size: 16px; padding: 6px 4px; background: rgba(32,80,160,0.5); }
 #enterBtn { min-width: 44px; font-size: 20px; padding: 8px 6px; background: rgba(48,98,48,0.5); display: none; }
 #startScreen, #gameOverScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,56,15,0.92); pointer-events: auto; z-index: 10; }
 #startScreen h1, #gameOverScreen h1 { color: #9bbc0f; font-size: 2.2em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 10px; letter-spacing: 4px; }
@@ -41,11 +44,14 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
   </div>
   <div id="powerUpBar"><span id="livesDisplay">LEBEN 3</span> <span id="powerDisplay"></span></div>
   <div id="controls">
-    <div id="dpad">
-      <button id="leftBtn">◀</button>
-      <button id="rightBtn">▶</button>
+    <div id="leftGroup">
+      <button id="restartTouchBtn">↻</button>
+      <button id="mapTouchBtn">KARTE</button>
+      <div id="dpad">
+        <button id="leftBtn">◀</button>
+        <button id="rightBtn">▶</button>
+      </div>
     </div>
-    <button id="restartTouchBtn">↻</button>
     <button id="enterBtn">↓</button>
     <button id="jumpBtn">SPRUNG</button>
   </div>
@@ -54,6 +60,7 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
     <p>Ein Jump'n'Run im GameBoy-Stil</p>
     <p style="font-size:0.8em;margin-top:12px;color:#306230">Pfeiltasten + Leertaste (Desktop)</p>
     <p style="font-size:0.8em;color:#306230">Touch-Buttons (Mobil) &middot; R = Neustart</p>
+    <p style="font-size:0.8em;color:#306230">Weltkarte: Pfeile + Sprung zum Starten</p>
     <div id="hsText" style="margin-top:10px;color:#8bac0f;font-size:0.9em"></div>
     <button class="btn" id="startBtn">▶ START</button>
   </div>
@@ -90,7 +97,16 @@ let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
 let biome = BIOME.MEADOW, biomeTrans = 0;
 let comboCount = 0, comboTimer = 0;
 let lastEnemySpawnX = 0, levelGaps = [];
+let goalFlag = null;
 let inBonusRoom = false, bonusCoins = [], bonusBlocks = [], bonusRoomPipe = null, bonusRoomTimer = 0;
+let gameScreen = 'start', currentLevel = 0, selectedLevel = 0, mapTimer = 0;
+const levels = [
+  {name:'WIESE', x:20, y:110, completed:false, biome:BIOME.MEADOW},
+  {name:'HOHLE', x:60, y:85, completed:false, biome:BIOME.CAVE},
+  {name:'HIMMEL', x:105, y:105, completed:false, biome:BIOME.SKY},
+  {name:'VULKAN', x:130, y:65, completed:false, biome:BIOME.VOLCANO},
+  {name:'FESTUNG', x:80, y:35, completed:false, biome:BIOME.MEADOW},
+];
 const keys = { left: false, right: false, jump: false, jumpPressed: false, down: false };
 
 // ---- Player ----
@@ -123,10 +139,14 @@ function rand(min,max){return min+Math.random()*(max-min);}
 function randInt(min,max){return Math.floor(rand(min,max+1));}
 function inGap(x,gaps){for(const g of gaps)if(x>=g[0]&&x<g[1])return true;return false;}
 
-function buildLevel() {
+function buildLevel(levelIndex) {
   platforms=[]; coins=[]; enemies=[]; particles=[]; movingPlats=[];
   questBlocks=[]; powerups=[]; pipes=[]; checkpoints=[];
   const L = 10000;
+  biome = (levelIndex!==undefined) ? levels[levelIndex].biome : BIOME.MEADOW;
+
+  // Use level index to vary seeds for different levels
+  const seed = (levelIndex||0) * 1337 + 42;
 
   // ---- Generate random gaps per biome ----
   const gapCfgs = [
@@ -163,6 +183,13 @@ function buildLevel() {
     {start:7600,end:9700,count:18,yRange:[H-48,H-140],wRange:[32,64]},
   ];
   function expand(r,pad){return{x:r.x-pad,y:r.y-pad,w:r.w+pad*2,h:r.h+pad*2};}
+  function vertTooClose(a,b,minGap){
+    if(a.x>=b.x+b.w||a.x+a.w<=b.x)return false;
+    const gap=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y));
+    if(gap>0)return true; // overlapping vertically
+    const dist=Math.max(a.y,b.y)-Math.min(a.y+a.h,b.y+b.h);
+    return dist<minGap;
+  }
   for (const seg of platSegs) {
     for (let i=0; i<seg.count; i++) {
       for (let t=0; t<50; t++) {
@@ -171,8 +198,8 @@ function buildLevel() {
         const y = randInt(seg.yRange[1], seg.yRange[0]);
         const w = randInt(seg.wRange[0]/16, seg.wRange[1]/16)*16;
         const rr=expand({x,y,w,h:8},8);
-        if (platforms.some(p=>p.type==='platform'&&rectCollide(rr,p))) continue;
-        if (questBlocks.some(q=>rectCollide(rr,q))) continue;
+        if (platforms.some(p=>p.type==='platform'&&(rectCollide(rr,p)||vertTooClose(rr,p,30)))) continue;
+        if (questBlocks.some(q=>rectCollide(rr,q)||vertTooClose(rr,q,30))) continue;
         platforms.push({x, y, w, h:8, type:'platform'}); break;
       }
     }
@@ -180,6 +207,8 @@ function buildLevel() {
   // Staircase finale
   for (let i=0; i<7; i++) platforms.push({x:9800+i*16, y:H-48-i*16, w:16, h:8, type:'platform'});
   platforms.push({x:9920, y:H-48, w:80, h:8, type:'platform'});
+  // Goal flag
+  goalFlag = {x:9980, y:H-64, w:12, h:48, reached:false};
 
   // ---- Moving Platforms ----
   const mpCfgs = [
@@ -195,7 +224,9 @@ function buildLevel() {
       const check={x:cfg.x,y,w:32,h:6};
       const check2={x:mid,y,w:32,h:6};
       const check3={x:cfg.endX-24,y,w:32,h:6};
-      const ok = !platforms.some(p=>p.type==='platform'&&(rectCollide(check,p)||rectCollide(check2,p)||rectCollide(check3,p)));
+      const ok = !platforms.some(p=>p.type==='platform'&&(
+        rectCollide(check,p)||rectCollide(check2,p)||rectCollide(check3,p)||
+        vertTooClose(check,p,30)||vertTooClose(check2,p,30)||vertTooClose(check3,p,30)));
       if (ok) { movingPlats.push({x:cfg.x,y,w:32,h:6,startX:cfg.x,endX:cfg.endX,speed:0.8+rand(0,0.4),phase:Math.random()*Math.PI*2}); break; }
     }
   }
@@ -216,7 +247,7 @@ function buildLevel() {
         const y=qbY('coin');
         const qr=expand({x,y,w:12,h:12},8);
         if (questBlocks.some(q=>rectCollide(qr,q))) continue;
-        if (platforms.some(p=>p.type==='platform'&&rectCollide(qr,p))) continue;
+        if (platforms.some(p=>p.type==='platform'&&(rectCollide(qr,p)||vertTooClose(qr,p,30)))) continue;
         questBlocks.push({x, y, w:12, h:12, type:'coin', hit:false, bounce:0, contents:'coin'}); break;
       }
     }
@@ -481,19 +512,58 @@ function resetGame() {
   score=0; coinCount=0; lives=3; distance=0; camera.x=0;
   gameOver=false; screenShake=0; gameRunning=true;
   comboCount=0; comboTimer=0;   lastEnemySpawnX=0; inBonusRoom=false; bonusRoomPipe=null; bonusCoins=[]; bonusBlocks=[];
-  buildLevel(); resetPlayer(); powerUpPopups=[];
+  buildLevel(currentLevel); resetPlayer(); powerUpPopups=[];
+  goalFlag = null;
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.add('hidden');
 }
 
 function restartGame() {
+  if (gameScreen === 'map') { startGame(); return; }
   if (!gameRunning) { startGame(); return; }
   resetGame();
+}
+
+function returnToMap() {
+  gameScreen = 'map';
+  gameRunning = true;
+  gameOver = false;
+  inBonusRoom = false; bonusRoomPipe = null; bonusCoins = []; bonusBlocks = [];
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.add('hidden');
 }
 
 // ---- Update ----
 function update() {
   if (!gameRunning || gameOver) return;
+
+  // ---- Map Screen ----
+  if (gameScreen === 'map') {
+    document.getElementById('controls').style.display='none';
+    document.getElementById('statusBar').style.display='none';
+    document.getElementById('powerUpBar').style.display='none';
+    mapTimer++;
+    if (keys.jumpPressed) {
+      keys.jumpPressed=false;
+      if (!levels[selectedLevel].completed && selectedLevel > 0 && !levels[selectedLevel-1].completed) {
+        // can't select this level yet
+      } else {
+        currentLevel = selectedLevel;
+        gameScreen = 'playing';
+        document.getElementById('controls').style.display='';
+        document.getElementById('statusBar').style.display='';
+        document.getElementById('powerUpBar').style.display='';
+        resetGame();
+      }
+    }
+    // Navigate levels (left/right cycles through)
+    if (mapTimer>10) {
+      if (keys.left&&selectedLevel>0) { selectedLevel--; mapTimer=0; }
+      if (keys.right&&selectedLevel<levels.length-1) { selectedLevel++; mapTimer=0; }
+    }
+    keys.jumpPressed=false;
+    return;
+  }
 
   // ---- Bonus Room ----
   if (inBonusRoom) {
@@ -549,6 +619,9 @@ function update() {
   animTick++;
   const p = player;
 
+  // Player won → freeze until map transition
+  if (p.won) return;
+
   // Combotimer
   if (comboTimer>0) comboTimer--; else comboCount=0;
 
@@ -574,7 +647,7 @@ function update() {
       if (pipe.enterable && Math.abs(p.x-pipe.x)<60 && Math.abs(p.y+p.h-pipe.y)<20) { nearPipe=true; break; }
     }
   }
-  document.getElementById('enterBtn').style.display = nearPipe ? '' : 'none';
+  document.getElementById('enterBtn').style.display = nearPipe ? 'inline-block' : 'none';
 
   // Star timer & invincibility
   if (p.star>0) p.star--;
@@ -820,7 +893,8 @@ function update() {
   if (p.y>H) { if (p.star>0) p.y=H-20; else playerDie(); }
 
   // Win
-  if (p.x>10000) { playerWins(); }
+  if (goalFlag && !goalFlag.reached && p.x+p.w>goalFlag.x && p.x<goalFlag.x+goalFlag.w) { goalFlag.reached=true; playerWins(); }
+  if (p.x>10100) { playerWins(); }
 
   // Particles
   for (let i=particles.length-1; i>=0; i--) {
@@ -891,14 +965,14 @@ function playerWins() {
   score+=2000;
   document.getElementById('scoreDisplay').textContent=String(score).padStart(6,'0');
   if (score>highScore) { highScore=score; saveHighScore(); }
+  levels[currentLevel].completed = true;
   setTimeout(()=>{
-    gameRunning=false;
-    document.getElementById('finalScore').textContent='PUNKTE: '+score+' (ZIEL!)';
-    document.getElementById('finalCoins').textContent='MUNZEN: '+coinCount;
-    document.getElementById('finalDist').textContent='STRECKE: '+distance+'m';
-    document.getElementById('finalHS').textContent='HIGHSCORE: '+highScore;
-    document.getElementById('gameOverScreen').classList.remove('hidden');
-  },1500);
+    gameScreen = 'map';
+    gameRunning = true;
+    gameOver = false;
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    document.getElementById('startScreen').classList.add('hidden');
+  }, 1500);
 }
 
 function sfxWin() {
@@ -1211,8 +1285,67 @@ function drawCheckpoint(cp,cx) {
   }
 }
 
+function drawMap() {
+  ctx.fillStyle='#1a1a2a';
+  ctx.fillRect(0,0,W,H);
+  // Draw paths between levels (connect consecutive)
+  ctx.fillStyle='#306230';
+  for (let i=0; i<levels.length-1; i++) {
+    const a=levels[i], b=levels[i+1];
+    const ax=a.x+12, ay=a.y+12, bx=b.x+12, by=b.y+12;
+    const dx=bx-ax, dy=by-ay;
+    const len=Math.sqrt(dx*dx+dy*dy);
+    for (let t=0; t<len; t+=6) {
+      const px=ax+dx*t/len, py=ay+dy*t/len;
+      ctx.fillRect(px-1,py-1,3,3);
+    }
+  }
+  // Draw level icons
+  for (let i=0; i<levels.length; i++) {
+    const l=levels[i];
+    const lx=l.x-1, ly=l.y-1, lw=26, lh=26;
+    // Level border
+    ctx.fillStyle=l.completed?'#8bac0f':(i===0||levels[i-1].completed?'#9bbc0f':'#306230');
+    ctx.fillRect(lx,ly,lw,lh);
+    ctx.fillStyle='#0f380f';
+    ctx.fillRect(lx+2,ly+2,lw-4,lh-4);
+    // Level number
+    ctx.fillStyle=l.completed?'#9bbc0f':(i===0||levels[i-1].completed?'#8bac0f':'#306230');
+    drawPixelText(''+(i+1),lx+10,ly+10,l.completed?'#9bbc0f':(i===0||levels[i-1].completed?'#8bac0f':'#306230'));
+    // Checkmark if completed
+    if (l.completed) {
+      ctx.fillStyle='#9bbc0f';
+      ctx.fillRect(lx+8,ly+17,2,5);
+      ctx.fillRect(lx+10,ly+19,5,2);
+    }
+  }
+  // Draw player cursor
+  const sl=levels[selectedLevel];
+  const cx=sl.x+12, cy=sl.y+12;
+  const bob=Math.sin(mapTimer*0.08)*3;
+  // Arrow above selected
+  ctx.fillStyle='#9bbc0f';
+  ctx.fillRect(cx-3,cy-26+bob,7,2);
+  ctx.fillRect(cx-2,cy-24+bob,5,3);
+  ctx.fillRect(cx-1,cy-22+bob,3,4);
+  // Level name at bottom
+  ctx.fillStyle='#0f380f';
+  ctx.fillRect(10,H-24,W-20,18);
+  ctx.fillStyle='#306230';
+  ctx.fillRect(12,H-22,W-24,14);
+  ctx.fillStyle='#9bbc0f';
+  drawPixelText(sl.name, 20, H-20, '#9bbc0f');
+  // Controls hint
+  ctx.fillStyle='#8bac0f';
+  drawPixelText('PFEIL+SPRUNG', 30, H-8, '#8bac0f');
+}
+
 function draw() {
   ctx.save();
+
+  // ---- Map Screen ----
+  if (gameScreen === 'map') { drawMap(); ctx.restore(); return; }
+
   if (screenShake>0.5) ctx.translate(Math.random()*screenShake-screenShake/2, Math.random()*screenShake-screenShake/2);
 
   // ---- Bonus Room ----
@@ -1300,6 +1433,21 @@ function draw() {
   // Enemies
   for (const e of enemies) { if (e.alive) drawEnemy(e,cx); }
 
+  // Goal flag
+  if (goalFlag) {
+    const gx=goalFlag.x-cx;
+    ctx.fillStyle='#306230';
+    ctx.fillRect(gx+4,goalFlag.y+20,4,28); // pole
+    ctx.fillStyle='#9bbc0f';
+    ctx.fillRect(gx,goalFlag.y,12,20); // flag
+    ctx.fillStyle='#8bac0f';
+    ctx.fillRect(gx+2,goalFlag.y+2,8,3);
+    ctx.fillRect(gx+2,goalFlag.y+8,8,3);
+    // Top ball
+    ctx.fillStyle='#9bbc0f';
+    ctx.fillRect(gx+3,goalFlag.y-3,6,3);
+  }
+
   // Player
   if (!player.dead) drawPlayer(player.x-cx, player.y, player.facing, player.frame, player.onGround, player.big, player.star);
 
@@ -1348,17 +1496,26 @@ function draw() {
 
 // ---- Pixel Font ----
 const FONT={
-  P:[0b01110,0b10001,0b10001,0b11110,0b10000,0b10000],
-  I:[0b00100,0b01110,0b00100,0b00100,0b00100,0b01110],
-  L:[0b01000,0b01000,0b01000,0b01000,0b01000,0b01111],
-  Z:[0b11111,0b00001,0b00011,0b00110,0b01100,0b11111],
-  F:[0b11111,0b10000,0b11110,0b10000,0b10000,0b10000],
+  A:[0b01110,0b10001,0b11111,0b10001,0b10001,0b10001],
+  C:[0b01110,0b10001,0b10000,0b10000,0b10001,0b01110],
   E:[0b11111,0b10000,0b11110,0b10000,0b10000,0b11111],
-  U:[0b10001,0b10001,0b10001,0b10001,0b10001,0b01110],
+  F:[0b11111,0b10000,0b11110,0b10000,0b10000,0b10000],
+  G:[0b01110,0b10001,0b10000,0b10111,0b10001,0b01110],
+  H:[0b10001,0b10001,0b11111,0b10001,0b10001,0b10001],
+  I:[0b00100,0b01110,0b00100,0b00100,0b00100,0b01110],
+  K:[0b10001,0b10010,0b11100,0b10010,0b10001,0b10001],
+  L:[0b01000,0b01000,0b01000,0b01000,0b01000,0b01111],
+  M:[0b10001,0b11011,0b10101,0b10001,0b10001,0b10001],
+  N:[0b10001,0b10001,0b11001,0b10101,0b10011,0b10001],
+  O:[0b01110,0b10001,0b10001,0b10001,0b10001,0b01110],
+  P:[0b01110,0b10001,0b10001,0b11110,0b10000,0b10000],
   R:[0b11110,0b10001,0b11110,0b10100,0b10010,0b10001],
   S:[0b01110,0b10001,0b00110,0b01000,0b10001,0b01110],
   T:[0b11111,0b00100,0b00100,0b00100,0b00100,0b00100],
-  N:[0b10001,0b10001,0b11001,0b10101,0b10011,0b10001],
+  U:[0b10001,0b10001,0b10001,0b10001,0b10001,0b01110],
+  V:[0b10001,0b10001,0b10001,0b10001,0b01110,0b00100],
+  W:[0b10001,0b10001,0b10001,0b10101,0b11011,0b10001],
+  Z:[0b11111,0b00001,0b00011,0b00110,0b01100,0b11111],
 };
 function drawPixelChar(ch,x,y,color){
   const g=FONT[ch]; if(!g)return;
@@ -1387,6 +1544,7 @@ function setupInput() {
     if (e.key==='ArrowDown'){keys.down=true;e.preventDefault();}
     if (e.key==='r'||e.key==='R') restartGame();
     if (e.key==='f'||e.key==='F') goFullscreen();
+    if (e.key==='Escape'||e.key==='m'||e.key==='M') returnToMap();
   });
   document.addEventListener('keyup',e=>{
     if (e.key==='ArrowLeft') keys.left=false;
@@ -1408,7 +1566,8 @@ function goFullscreen() {
 function startGame() {
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('gameOverScreen').classList.add('hidden');
-  resetGame();
+  currentLevel = 0; selectedLevel = 0;
+  gameScreen = 'map'; gameRunning = true; gameOver = false;
   goFullscreen();
 }
 
@@ -1419,6 +1578,8 @@ document.getElementById('restartBtn').addEventListener('click',startGame);
 document.getElementById('restartBtn').addEventListener('touchend',e=>{e.preventDefault();startGame();});
 document.getElementById('restartTouchBtn').addEventListener('click',restartGame);
 document.getElementById('restartTouchBtn').addEventListener('touchend',e=>{e.preventDefault();restartGame();});
+document.getElementById('mapTouchBtn').addEventListener('click',returnToMap);
+document.getElementById('mapTouchBtn').addEventListener('touchend',e=>{e.preventDefault();returnToMap();});
 
 setupInput();
 
