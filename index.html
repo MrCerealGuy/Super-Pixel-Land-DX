@@ -25,11 +25,14 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
 #restartTouchBtn { min-width: 54px; font-size: 22px; padding: 10px 8px; background: rgba(160,32,32,0.5); }
 #mapTouchBtn { min-width: 54px; font-size: 16px; padding: 6px 4px; background: rgba(32,80,160,0.5); }
 #enterBtn { min-width: 44px; font-size: 20px; padding: 8px 6px; background: rgba(48,98,48,0.5); display: none; }
+#rightGroup { display: flex; flex-direction: row; align-items: flex-end; gap: 4px; pointer-events: none; }
+#rightGroup * { pointer-events: auto; }
+#fireBtn { min-width: 62px; font-size: 18px; padding: 10px 6px; background: rgba(160,32,32,0.6); display: none; }
 #startScreen, #gameOverScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,56,15,0.92); pointer-events: auto; z-index: 10; }
 #startScreen h1, #gameOverScreen h1 { color: #9bbc0f; font-size: 2.2em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 10px; letter-spacing: 4px; }
-#statusBar { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 6px 10px; pointer-events: none; z-index: 1; }
-#statusBar > div { color: #9bbc0f; font-size: 13px; font-weight: bold; text-shadow: 2px 2px 0 #306230; letter-spacing: 1px; }
-#powerUpBar { position: absolute; top: 26px; left: 10px; color: #8bac0f; font-size: 11px; text-shadow: 1px 1px 0 #306230; }
+#statusBar { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 8px 12px; pointer-events: none; z-index: 1; }
+#statusBar > div { color: #9bbc0f; font-size: 16px; font-weight: bold; text-shadow: 2px 2px 0 #306230; letter-spacing: 1px; }
+#powerUpBar { position: absolute; top: 30px; left: 12px; color: #8bac0f; font-size: 14px; text-shadow: 1px 1px 0 #306230; }
 #highScoreLabel { color: #8bac0f; font-size: 11px; }
 #startScreen p, #gameOverScreen p { color: #8bac0f; font-size: 1em; margin: 4px 0; text-align: center; }
 #startScreen .btn, #gameOverScreen .btn { pointer-events: auto; margin-top: 20px; background: #306230; color: #9bbc0f; border: 3px solid #9bbc0f; font-size: 1.3em; padding: 12px 36px; border-radius: 8px; font-family: monospace; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent; }
@@ -54,8 +57,11 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
         <button id="rightBtn">▶</button>
       </div>
     </div>
-    <button id="enterBtn">↓</button>
-    <button id="jumpBtn">SPRUNG</button>
+    <div id="rightGroup">
+      <button id="enterBtn">↓</button>
+      <button id="jumpBtn">SPRUNG</button>
+      <button id="fireBtn">FEUER</button>
+    </div>
   </div>
   <div id="startScreen">
     <h1>SUPER PIXEL LAND DX</h1>
@@ -91,6 +97,7 @@ const BIOME = {
   MEADOW: 0, CAVE: 1, SKY: 2, VOLCANO: 3
 };
 
+let fireballs = [];
 let camera = { x: 0 };
 let platforms = [], coins = [], enemies = [], particles = [], movingPlats = [];
 let questBlocks = [], powerups = [], pipes = [], checkpoints = [], powerUpPopups = [];
@@ -100,7 +107,7 @@ let biome = BIOME.MEADOW, biomeTrans = 0;
 let comboCount = 0, comboTimer = 0;
 let lastEnemySpawnX = 0, levelGaps = [];
 let goalFlag = null;
-let inBonusRoom = false, bonusCoins = [], bonusBlocks = [], bonusRoomPipe = null, bonusRoomTimer = 0;
+let inBonusRoom = false, bonusCoins = [], bonusBlocks = [], bonusRoomPipe = null, bonusRoomTimer = 0, bonusExitCooldown = 0;
 let gameScreen = 'start', currentLevel = 0, selectedLevel = 0, mapTimer = 0;
 const levels = [
   {name:'WIESE', x:20, y:110, completed:false, biome:BIOME.MEADOW},
@@ -109,7 +116,7 @@ const levels = [
   {name:'VULKAN', x:130, y:65, completed:false, biome:BIOME.VOLCANO},
   {name:'FESTUNG', x:80, y:35, completed:false, biome:BIOME.MEADOW},
 ];
-const keys = { left: false, right: false, jump: false, jumpPressed: false, down: false };
+const keys = { left: false, right: false, jump: false, jumpPressed: false, down: false, shoot: false, shootPressed: false };
 
 // ---- Player ----
 const player = {
@@ -120,6 +127,7 @@ const player = {
 
 // ---- Audio ----
 let audioCtx = null;
+let starOsc = null, starGain = null, starFrame = 0;
 function getAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
 function playBeep(freq, dur, type, vol) {
   try { const c = getAudio(); const o = c.createOscillator(), g = c.createGain(); o.type = type||'square'; o.frequency.value = freq; g.gain.value = vol||0.06; g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+dur); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur); } catch(e) {}
@@ -132,6 +140,13 @@ function sfxPowerUp() { playBeep(660,0.08,'square',0.06); setTimeout(()=>playBee
 function sfxBlock() { playBeep(300,0.05,'square',0.04); }
 function sfxStar() { playBeep(880,0.08,'square',0.05); setTimeout(()=>playBeep(1100,0.08,'square',0.05),80); setTimeout(()=>playBeep(1320,0.08,'square',0.05),160); setTimeout(()=>playBeep(1760,0.15,'square',0.05),240); }
 function sfxHit() { playBeep(200,0.12,'square',0.07); }
+function sfxFire() { playBeep(1200,0.05,'square',0.04); playBeep(800,0.06,'square',0.03); }
+function stopStarMusic() {
+  if (starOsc) {
+    try { starGain.gain.value = 0; starOsc.stop(); } catch(e) {}
+    starOsc = null; starGain = null;
+  }
+}
 
 function saveHighScore() { try { localStorage.setItem('splDxHS', highScore); } catch(e) {} }
 function loadHighScore() { try { const v = localStorage.getItem('splDxHS'); if (v) highScore = parseInt(v)||0; return highScore; } catch(e) { return 0; } }
@@ -143,7 +158,7 @@ function inGap(x,gaps){for(const g of gaps)if(x>=g[0]&&x<g[1])return true;return
 
 function buildLevel(levelIndex) {
   platforms=[]; coins=[]; enemies=[]; particles=[]; movingPlats=[];
-  questBlocks=[]; powerups=[]; pipes=[]; checkpoints=[];
+  questBlocks=[]; powerups=[]; pipes=[]; checkpoints=[]; fireballs=[];
   const L = 10000;
   biome = (levelIndex!==undefined) ? levels[levelIndex].biome : BIOME.MEADOW;
 
@@ -371,10 +386,15 @@ function buildLevel(levelIndex) {
     enemies.push({x, y:H-32, w:18, h:16, vx:-0.6-Math.random()*0.3, vy:0, type:'big', alive:true, hp:2, frame:0});
   }
 
-  // ---- Checkpoints ----
+  // ---- Checkpoints (avoid gaps) ----
   for (let x=1000; x<=9000; x+=1000) {
-    const off = randInt(-80,80);
-    checkpoints.push({x:x+off, y:H-20, w:8, h:16, reached:false});
+    let cx = x;
+    for (let t=0; t<20; t++) {
+      const off = randInt(-80,80);
+      const testX = x + off;
+      if (!inGap(testX, gaps) && !inGap(testX+8, gaps)) { cx = testX; break; }
+    }
+    checkpoints.push({x:cx, y:H-20, w:8, h:16, reached:false});
   }
 
   // Add moving platform rects as passable platforms
@@ -450,6 +470,10 @@ function enterBonusRoom(pipe) {
   if (inBonusRoom) return;
   inBonusRoom = true;
   bonusRoomPipe = pipe;
+  // Place player safely away from exit pipe
+  player.x = 5;
+  player.y = H - player.h - 1;
+  player.vx = 0; player.vy = 0;
   // Build blocks FIRST
   bonusBlocks = [];
   const steps = [
@@ -473,6 +497,7 @@ function enterBonusRoom(pipe) {
   bonusCoins = generateBonusPattern();
   bonusCoins = bonusCoins.filter(c => !bonusBlocks.some(b => rectCollide(c,b)));
   bonusRoomTimer = 600;
+  bonusExitCooldown = 30;
 }
 
 function exitBonusRoom() {
@@ -511,9 +536,11 @@ function resetPlayer() {
 }
 
 function resetGame() {
+  stopStarMusic();
   score=0; coinCount=0; lives=3; distance=0; camera.x=0;
   gameOver=false; screenShake=0; gameRunning=true;
-  comboCount=0; comboTimer=0;   lastEnemySpawnX=0; inBonusRoom=false; bonusRoomPipe=null; bonusCoins=[]; bonusBlocks=[];
+  comboCount=0; comboTimer=0;   lastEnemySpawnX=0; inBonusRoom=false; bonusRoomPipe=null; bonusCoins=[]; bonusBlocks=[]; bonusExitCooldown=0;
+  fireballs=[];
   buildLevel(currentLevel); resetPlayer(); powerUpPopups=[];
   goalFlag = null;
   document.getElementById('gameOverScreen').classList.add('hidden');
@@ -527,10 +554,11 @@ function restartGame() {
 }
 
 function returnToMap() {
+  stopStarMusic();
   gameScreen = 'map';
   gameRunning = true;
   gameOver = false;
-  inBonusRoom = false; bonusRoomPipe = null; bonusCoins = []; bonusBlocks = [];
+  inBonusRoom = false; bonusRoomPipe = null; bonusCoins = []; bonusBlocks = []; bonusExitCooldown = 0;
   document.getElementById('restartTouchBtn').style.display='none';
   document.getElementById('mapTouchBtn').style.display='none';
   document.getElementById('enterBtn').style.display='none';
@@ -550,7 +578,8 @@ function update() {
     document.getElementById('powerUpBar').style.display='none';
     document.getElementById('restartTouchBtn').style.display='none';
     document.getElementById('mapTouchBtn').style.display='none';
-    document.getElementById('enterBtn').style.display='none';
+  document.getElementById('enterBtn').style.display='none';
+  document.getElementById('fireBtn').style.display='none';
     document.getElementById('controls').style.display='flex';
     mapTimer++;
     if (keys.jumpPressed) {
@@ -577,8 +606,39 @@ function update() {
     return;
   }
 
+  // ---- Star Music ----
+  const sp = player;
+  if (sp.star > 0) {
+    if (!starOsc) {
+      try {
+        const c = getAudio();
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = 'square'; g.gain.value = 0.04;
+        o.connect(g); g.connect(c.destination); o.start();
+        starOsc = o; starGain = g;
+      } catch(e) {}
+    }
+    if (starOsc) {
+      const warn = sp.star <= 60;
+      if (warn) {
+        const notes = [1047, 1319];
+        const idx = Math.floor(sp.star / 8) % 2;
+        starOsc.frequency.value = notes[idx];
+        starGain.gain.value = (sp.star % 8 < 4) ? 0.04 : 0;
+      } else {
+        const notes = [523, 659, 784, 880, 1047, 880, 784, 659];
+        const idx = Math.floor(++starFrame / 12) % 8;
+        starOsc.frequency.value = notes[idx];
+        starGain.gain.value = 0.035;
+      }
+    }
+  } else if (starOsc) {
+    stopStarMusic();
+  }
+
   // ---- Bonus Room ----
   if (inBonusRoom) {
+    document.getElementById('fireBtn').style.display = 'none';
     const p = player;
     if (bonusRoomTimer>0) bonusRoomTimer--;
     // Player movement within bonus room
@@ -623,7 +683,8 @@ function update() {
       exitBonusRoom();
     }
     // Exit via pipe touch (standing at bottom pipe)
-    if (p.onGround && p.x>W-45 && p.x<W-15) exitBonusRoom();
+    if (bonusExitCooldown>0) bonusExitCooldown--;
+    else if (p.onGround && p.x>W-45 && p.x<W-15) exitBonusRoom();
     animTick++;
     // Don't process main game updates
     return;
@@ -660,6 +721,7 @@ function update() {
     }
   }
   document.getElementById('enterBtn').style.display = nearPipe ? 'inline-block' : 'none';
+  document.getElementById('fireBtn').style.display = (!inBonusRoom && p.shoot && !p.dead) ? 'inline-block' : 'none';
 
   // Star timer & invincibility
   if (p.star>0) p.star--;
@@ -868,6 +930,7 @@ function update() {
       }
     }
     if (e.y>H+30) { e.alive=false; continue; }
+    if (e.x < camera.x - 200) { e.alive=false; continue; }
 
     e.frame=Math.floor(animTick/12)%2;
 
@@ -898,11 +961,58 @@ function update() {
     }
   }
 
-  // ---- Shooting (fire flower) ----
-  if (keys.jumpPressed) {} // already handled
+  // ---- Fireballs ----
+  if (keys.shootPressed && p.shoot && !p.dead) {
+    keys.shootPressed = false;
+    sfxFire();
+    fireballs.push({
+      x: p.x + (p.facing > 0 ? p.w : -4),
+      y: p.y + 4,
+      w: 4, h: 4,
+      vx: p.facing * 4,
+      life: 40
+    });
+  }
+  keys.shootPressed = false;
+  for (let i = fireballs.length - 1; i >= 0; i--) {
+    const fb = fireballs[i];
+    fb.x += fb.vx;
+    fb.life--;
+    if (fb.life <= 0) { fireballs.splice(i, 1); continue; }
+    // Collide with platforms
+    const fbR = { x: fb.x, y: fb.y, w: fb.w, h: fb.h };
+    let hitWall = false;
+    for (const plat of platforms) {
+      if (rectCollide(fbR, plat)) { hitWall = true; break; }
+    }
+    if (!hitWall) {
+      for (const qb of questBlocks) {
+        if (rectCollide(fbR, { x: qb.x, y: qb.y, w: qb.w, h: qb.h })) { hitWall = true; break; }
+      }
+    }
+    if (!hitWall) {
+      for (const pipe of pipes) {
+        if (rectCollide(fbR, { x: pipe.x, y: pipe.y, w: pipe.w, h: pipe.h })) { hitWall = true; break; }
+      }
+    }
+    if (hitWall) { fireballs.splice(i, 1); continue; }
+    // Collide with enemies
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const eY = e.y + (e.type === 'flying' ? e.flyOff : 0);
+      if (rectCollide(fbR, { x: e.x, y: eY, w: e.w, h: e.h })) {
+        e.alive = false;
+        score += 200;
+        sfxStomp();
+        spawnParticles(e.x + e.w / 2, eY + e.h / 2, 10, '#a02020');
+        fireballs.splice(i, 1);
+        break;
+      }
+    }
+  }
 
   // Fall off
-  if (p.y>H) { if (p.star>0) p.y=H-20; else playerDie(); }
+  if (p.y>H) { if (p.star>0) p.y=H-20; else if (!p.dead) playerDie(); }
 
   // Win
   if (goalFlag && !goalFlag.reached && p.x+p.w>goalFlag.x && p.x<goalFlag.x+goalFlag.w) { goalFlag.reached=true; playerWins(); }
@@ -940,6 +1050,7 @@ function spawnPowerUp(x,y,type) {
 
 function playerDie() {
   if (player.dead || player.invTimer>0) return;
+  stopStarMusic();
   // If big, shrink instead of dying
   if (player.big) {
     player.big=false; player.h=14; player.w=10; player.y+=6;
@@ -973,7 +1084,7 @@ function playerDie() {
 
 function playerWins() {
   if (player.won) return;
-  player.won=true; sfxWin();
+  stopStarMusic(); player.won=true; sfxWin();
   score+=2000;
   document.getElementById('scoreDisplay').textContent=String(score).padStart(6,'0');
   if (score>highScore) { highScore=score; saveHighScore(); }
@@ -1515,6 +1626,15 @@ function draw() {
   // Enemies
   for (const e of enemies) { if (e.alive) drawEnemy(e,cx); }
 
+  // Fireballs
+  for (const fb of fireballs) {
+    const dx = fb.x - cx;
+    ctx.fillStyle = '#a02020';
+    ctx.fillRect(dx, fb.y, fb.w, fb.h);
+    ctx.fillStyle = '#ff6020';
+    ctx.fillRect(dx + 1, fb.y + 1, 2, 2);
+  }
+
   // Goal flag
   if (goalFlag) {
     const gx=goalFlag.x-cx;
@@ -1609,21 +1729,23 @@ function drawPixelText(t,x,y,color){for(let i=0;i<t.length;i++)drawPixelChar(t[i
 // ---- Input ----
 function setupInput() {
   function bindBtn(el,key) {
-    el.addEventListener('touchstart',e=>{keys[key]=true;if(key==='jump')keys.jumpPressed=true;e.preventDefault();},{passive:false});
+    el.addEventListener('touchstart',e=>{keys[key]=true;if(key==='jump')keys.jumpPressed=true;if(key==='shoot')keys.shootPressed=true;e.preventDefault();},{passive:false});
     el.addEventListener('touchend',e=>{keys[key]=false;e.preventDefault();},{passive:false});
     el.addEventListener('touchcancel',e=>{keys[key]=false;e.preventDefault();},{passive:false});
-    el.addEventListener('mousedown',e=>{keys[key]=true;if(key==='jump')keys.jumpPressed=true;});
+    el.addEventListener('mousedown',e=>{keys[key]=true;if(key==='jump')keys.jumpPressed=true;if(key==='shoot')keys.shootPressed=true;});
     el.addEventListener('mouseup',e=>{keys[key]=false;});
   }
   bindBtn(document.getElementById('leftBtn'),'left');
   bindBtn(document.getElementById('rightBtn'),'right');
   bindBtn(document.getElementById('jumpBtn'),'jump');
   bindBtn(document.getElementById('enterBtn'),'down');
+  bindBtn(document.getElementById('fireBtn'),'shoot');
   document.addEventListener('keydown',e=>{
     if (e.key==='ArrowLeft') keys.left=true;
     if (e.key==='ArrowRight') keys.right=true;
     if (e.key===' '||e.key==='ArrowUp'){keys.jump=true;keys.jumpPressed=true;e.preventDefault();}
     if (e.key==='ArrowDown'){keys.down=true;e.preventDefault();}
+    if (e.code==='ControlRight'){keys.shoot=true;keys.shootPressed=true;e.preventDefault();}
     if (e.key==='r'||e.key==='R') restartGame();
     if (e.key==='f'||e.key==='F') goFullscreen();
     if (e.key==='Escape'||e.key==='m'||e.key==='M') returnToMap();
@@ -1633,6 +1755,7 @@ function setupInput() {
     if (e.key==='ArrowRight') keys.right=false;
     if (e.key===' '||e.key==='ArrowUp'){keys.jump=false;e.preventDefault();}
     if (e.key==='ArrowDown'){keys.down=false;e.preventDefault();}
+    if (e.code==='ControlRight'){keys.shoot=false;e.preventDefault();}
   });
 }
 
