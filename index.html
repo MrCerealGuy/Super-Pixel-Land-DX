@@ -87,6 +87,7 @@ let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0;
 let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
 let biome = BIOME.MEADOW, biomeTrans = 0;
 let comboCount = 0, comboTimer = 0;
+let lastEnemySpawnX = 0, levelGaps = [];
 const keys = { left: false, right: false, jump: false, jumpPressed: false };
 
 // ---- Player ----
@@ -115,146 +116,224 @@ function saveHighScore() { try { localStorage.setItem('splDxHS', highScore); } c
 function loadHighScore() { try { const v = localStorage.getItem('splDxHS'); if (v) highScore = parseInt(v)||0; return highScore; } catch(e) { return 0; } }
 
 // ---- Level Building ----
+function rand(min,max){return min+Math.random()*(max-min);}
+function randInt(min,max){return Math.floor(rand(min,max+1));}
+function inGap(x,gaps){for(const g of gaps)if(x>=g[0]&&x<g[1])return true;return false;}
+
 function buildLevel() {
   platforms=[]; coins=[]; enemies=[]; particles=[]; movingPlats=[];
   questBlocks=[]; powerups=[]; pipes=[]; checkpoints=[];
   const L = 10000;
-  const gaps=[
-    [500,548],[900,948],[1350,1398],[1750,1798],            // meadow
-    [2150,2214],[2600,2648],[3100,3164],[3600,3648],         // cave
-    [4100,4148],[4550,4598],[5100,5164],[5600,5648],         // cave-sky
-    [6100,6164],[6600,6648],[7100,7148],[7600,7664],         // sky
-    [8100,8148],[8600,8664],[9100,9148],[9600,9648],         // volcano
+
+  // ---- Generate random gaps per biome ----
+  const gapCfgs = [
+    {min:400,max:1900,count:3,gapW:[32,48]},
+    {min:2100,max:4900,count:5,gapW:[32,48]},
+    {min:5100,max:7400,count:5,gapW:[32,48]},
+    {min:7600,max:9800,count:5,gapW:[48,64]},
   ];
+  const gaps = [];
+  for (const cfg of gapCfgs) {
+    for (let n=0; n<cfg.count; n++) {
+      for (let t=0; t<100; t++) {
+        const w = randInt(cfg.gapW[0]/16, cfg.gapW[1]/16)*16;
+        const x = randInt(cfg.min/16, (cfg.max-w)/16)*16;
+        if (gaps.some(g=>x<g[1]+80&&x+w>g[0]-80)) continue;
+        gaps.push([x, x+w]); break;
+      }
+    }
+  }
+  levelGaps = gaps;
+
+  // ---- Ground with gaps ----
   for (let x=0; x<L; x+=16) {
     let skip=false;
     for (const g of gaps) { if (x>=g[0]&&x<g[1]) { skip=true; break; } }
     if (!skip) platforms.push({x, y:H-16, w:16, h:16, type:'ground'});
   }
 
-  // Biome sections: meadow 0-2000, cave 2000-5000, sky 5000-7500, volcano 7500-10000
-  const bi = { meadow: {start:0,end:2000}, cave: {start:2000,end:5000}, sky: {start:5000,end:7500}, volcano: {start:7500,end:10000} };
-
-  // ---- MEADOW platforms ----
-  addPlats([
-    [180,H-48,48,8],[320,H-72,32,8],[480,H-48,48,8],[620,H-88,32,8],[780,H-56,48,8],
-    [920,H-80,32,8],[1080,H-48,48,8],[1220,H-96,40,8],[1380,H-64,48,8],[1520,H-96,32,8],
-    [1680,H-48,48,8],[1820,H-80,40,8],[100,H-104,32,8],[600,H-120,32,8],[1100,H-120,32,8],
-    [1600,H-120,32,8],
-  ]);
-  // ---- CAVE platforms ----
-  addPlats([
-    [2100,H-48,48,8],[2250,H-80,32,8],[2400,H-48,48,8],[2560,H-96,32,8],[2700,H-56,48,8],
-    [2860,H-80,32,8],[3000,H-48,48,8],[3150,H-96,40,8],[3300,H-64,48,8],[3450,H-96,32,8],
-    [3600,H-48,48,8],[3750,H-80,40,8],[3900,H-56,32,8],[4050,H-96,48,8],[4200,H-48,32,8],
-    [2300,H-120,32,8],[2800,H-130,32,8],[3400,H-120,32,8],[4000,H-130,32,8],
-    [4350,H-48,48,8],[4500,H-80,32,8],[4650,H-56,48,8],[4800,H-96,32,8],
-  ]);
-  // ---- SKY platforms ----
-  addPlats([
-    [5100,H-48,48,8],[5250,H-96,32,8],[5400,H-48,48,8],[5560,H-80,32,8],[5700,H-56,48,8],
-    [5860,H-96,32,8],[6000,H-48,48,8],[6150,H-96,40,8],[6300,H-64,48,8],[6450,H-96,32,8],
-    [6600,H-48,48,8],[6750,H-80,40,8],[6900,H-56,32,8],[7050,H-96,48,8],[7200,H-48,32,8],
-    [7350,H-80,48,8],[7500,H-48,32,8],
-    [5300,H-130,32,8],[5800,H-140,32,8],[6300,H-130,32,8],[6800,H-140,32,8],[7300,H-130,32,8],
-  ]);
-  // ---- VOLCANO platforms ----
-  addPlats([
-    [7600,H-48,32,8],[7750,H-80,48,8],[7900,H-48,32,8],[8050,H-96,40,8],[8200,H-56,32,8],
-    [8350,H-80,48,8],[8500,H-48,32,8],[8650,H-96,40,8],[8800,H-64,32,8],[8950,H-80,48,8],
-    [9100,H-48,32,8],[9250,H-96,40,8],[9400,H-56,32,8],[9550,H-80,48,8],[9700,H-48,32,8],
-    [7800,H-130,32,8],[8400,H-140,32,8],[9000,H-130,32,8],[9500,H-140,32,8],
-    // Staircase finale
-    [9800,H-48,16,8],[9816,H-64,16,8],[9832,H-80,16,8],[9848,H-96,16,8],[9864,H-112,16,8],
-    [9880,H-128,16,8],[9896,H-144,16,8],
-  ]);
-  // End flag zone
-  addPlats([[9920,H-48,80,8]]);
+  // ---- Random platforms per biome ----
+  const platSegs = [
+    {start:150,end:1950,count:12,yRange:[H-48,H-130],wRange:[32,64]},
+    {start:2100,end:4900,count:18,yRange:[H-48,H-130],wRange:[32,64]},
+    {start:5100,end:7400,count:18,yRange:[H-48,H-140],wRange:[32,64]},
+    {start:7600,end:9700,count:18,yRange:[H-48,H-140],wRange:[32,64]},
+  ];
+  function expand(r,pad){return{x:r.x-pad,y:r.y-pad,w:r.w+pad*2,h:r.h+pad*2};}
+  for (const seg of platSegs) {
+    for (let i=0; i<seg.count; i++) {
+      for (let t=0; t<50; t++) {
+        const x = randInt(seg.start/16, (seg.end-32)/16)*16;
+        if (inGap(x,gaps)) continue;
+        const y = randInt(seg.yRange[1], seg.yRange[0]);
+        const w = randInt(seg.wRange[0]/16, seg.wRange[1]/16)*16;
+        const rr=expand({x,y,w,h:8},8);
+        if (platforms.some(p=>p.type==='platform'&&rectCollide(rr,p))) continue;
+        if (questBlocks.some(q=>rectCollide(rr,q))) continue;
+        platforms.push({x, y, w, h:8, type:'platform'}); break;
+      }
+    }
+  }
+  // Staircase finale
+  for (let i=0; i<7; i++) platforms.push({x:9800+i*16, y:H-48-i*16, w:16, h:8, type:'platform'});
+  platforms.push({x:9920, y:H-48, w:80, h:8, type:'platform'});
 
   // ---- Moving Platforms ----
-  movingPlats.push({x:250,y:H-90,w:32,h:6,startX:250,endX:380,speed:1,phase:0});
-  movingPlats.push({x:1500,y:H-90,w:32,h:6,startX:1500,endX:1650,speed:0.8,phase:Math.PI});
-  movingPlats.push({x:2200,y:H-110,w:32,h:6,startX:2200,endX:2350,speed:1,phase:0});
-  movingPlats.push({x:3200,y:H-90,w:32,h:6,startX:3200,endX:3400,speed:0.9,phase:Math.PI});
-  movingPlats.push({x:4500,y:H-90,w:32,h:6,startX:4500,endX:4650,speed:1,phase:0});
-  movingPlats.push({x:5400,y:H-110,w:32,h:6,startX:5400,endX:5550,speed:1,phase:Math.PI});
-  movingPlats.push({x:6400,y:H-90,w:32,h:6,startX:6400,endX:6550,speed:0.8,phase:0});
-  movingPlats.push({x:7700,y:H-90,w:32,h:6,startX:7700,endX:7850,speed:1,phase:Math.PI});
-  movingPlats.push({x:8800,y:H-90,w:32,h:6,startX:8800,endX:9000,speed:1.2,phase:0});
+  const mpCfgs = [
+    {x:250,endX:400},{x:1450,endX:1600},
+    {x:2250,endX:2400},{x:3200,endX:3400},{x:4400,endX:4550},
+    {x:5400,endX:5550},{x:6400,endX:6550},
+    {x:7700,endX:7850},{x:8800,endX:9000},
+  ];
+  for (const cfg of mpCfgs) {
+    const mid=(cfg.x+cfg.endX)/2;
+    for (let t=0;t<30;t++) {
+      const y=H-50-randInt(20,50);
+      const check={x:cfg.x,y,w:32,h:6};
+      const check2={x:mid,y,w:32,h:6};
+      const check3={x:cfg.endX-24,y,w:32,h:6};
+      const ok = !platforms.some(p=>p.type==='platform'&&(rectCollide(check,p)||rectCollide(check2,p)||rectCollide(check3,p)));
+      if (ok) { movingPlats.push({x:cfg.x,y,w:32,h:6,startX:cfg.x,endX:cfg.endX,speed:0.8+rand(0,0.4),phase:Math.random()*Math.PI*2}); break; }
+    }
+  }
 
   // ---- Question Blocks ----
-  // Coins
-  const qbCoins = [280,440,580,720,850,1020,1150,2500,2700,2900,3100,3200,3400,3600,
-    5200,5400,5500,5600,5700,5800,6000,6200,6400,7700,7900,8100,8300,8500,8700,8900];
-  for (const x of qbCoins) questBlocks.push({x, y:H-48, w:12, h:12, type:'coin', hit:false, bounce:0, contents:'coin'});
-  // Power-ups in specific spots
-  const qbPower = [400, 1200, 2600, 3500, 5500, 6500, 8000, 9200];
-  for (const x of qbPower) questBlocks.push({x, y:H-48, w:12, h:12, type:'power', hit:false, bounce:0, contents:'power'});
-  const qbStar = [1800, 4600, 7400];
-  for (const x of qbStar) questBlocks.push({x, y:H-48, w:12, h:12, type:'star', hit:false, bounce:0, contents:'star'});
+  const qbSegs = [
+    {start:250,end:1900,coin:8,power:2,star:1},
+    {start:2100,end:4900,coin:10,power:3,star:1},
+    {start:5100,end:7400,coin:10,power:3,star:1},
+    {start:7600,end:9700,coin:10,power:2,star:1},
+  ];
+  function qbY(type){const r=Math.random();if(type==='coin')return r<0.5?H-48:r<0.8?H-64:H-80;if(type==='power')return r<0.6?H-48:H-64;return r<0.4?H-48:H-64;}
+  for (const seg of qbSegs) {
+    for (let n=0; n<seg.coin; n++) {
+      for (let t=0; t<50; t++) {
+        const x = randInt(seg.start/16, (seg.end-16)/16)*16;
+        if (inGap(x,gaps)||inGap(x+12,gaps)) continue;
+        const y=qbY('coin');
+        const qr=expand({x,y,w:12,h:12},8);
+        if (questBlocks.some(q=>rectCollide(qr,q))) continue;
+        if (platforms.some(p=>p.type==='platform'&&rectCollide(qr,p))) continue;
+        questBlocks.push({x, y, w:12, h:12, type:'coin', hit:false, bounce:0, contents:'coin'}); break;
+      }
+    }
+    for (let n=0; n<seg.power; n++) {
+      for (let t=0; t<50; t++) {
+        const x = randInt(seg.start/16, (seg.end-16)/16)*16;
+        if (inGap(x,gaps)||inGap(x+12,gaps)) continue;
+        const y=qbY('power');
+        const qr=expand({x,y,w:12,h:12},8);
+        if (questBlocks.some(q=>rectCollide(qr,q))) continue;
+        if (platforms.some(p=>p.type==='platform'&&rectCollide(qr,p))) continue;
+        questBlocks.push({x, y, w:12, h:12, type:'power', hit:false, bounce:0, contents:'power'}); break;
+      }
+    }
+    for (let n=0; n<seg.star; n++) {
+      for (let t=0; t<100; t++) {
+        const x = randInt(seg.start/16, (seg.end-16)/16)*16;
+        if (inGap(x,gaps)||inGap(x+12,gaps)) continue;
+        const y=qbY('star');
+        const qr=expand({x,y,w:12,h:12},8);
+        if (questBlocks.some(q=>rectCollide(qr,q))) continue;
+        if (platforms.some(p=>p.type==='platform'&&rectCollide(qr,p))) continue;
+        questBlocks.push({x, y, w:12, h:12, type:'star', hit:false, bounce:0, contents:'star'}); break;
+      }
+    }
+  }
 
-  // ---- Coins ----
+  // ---- Bonus blocks above platforms ----
+  for (const plat of platforms) {
+    if (plat.type !== 'platform' || Math.random() > 0.15) continue;
+    if (plat.x < 300 || plat.x > 9700) continue;
+    const y = plat.y - 28;
+    if (y < H - 120) continue;
+    const x = randInt(plat.x/16, (plat.x+plat.w-12)/16)*16;
+    const qr = expand({x,y,w:12,h:12},8);
+    if (questBlocks.some(q=>rectCollide(qr,q))) continue;
+    if (platforms.some(p=>p.type==='platform'&&p!==plat&&rectCollide(qr,p))) continue;
+    const type = Math.random() < 0.7 ? 'coin' : 'power';
+    questBlocks.push({x, y, w:12, h:12, type, hit:false, bounce:0, contents:type});
+  }
+  // Bonus blocks above moving platforms
+  for (const mp of movingPlats) {
+    if (Math.random() > 0.3) continue;
+    const mid = (mp.startX + mp.endX) / 2;
+    const y = mp.y - 28;
+    if (y < H - 120) continue;
+    const x = randInt((mid-16)/16, (mid+4)/16)*16;
+    const qr = expand({x,y,w:12,h:12},8);
+    if (questBlocks.some(q=>rectCollide(qr,q))) continue;
+    if (platforms.some(p=>p.type==='platform'&&rectCollide(qr,p))) continue;
+    const type = Math.random() < 0.6 ? 'coin' : 'power';
+    questBlocks.push({x, y, w:12, h:12, type, hit:false, bounce:0, contents:type});
+  }
+
+  // ---- Pipes ----
+  for (let i=0; i<7; i++) {
+    for (let t=0; t<50; t++) {
+      const x = randInt(300/16, (9800-24)/16)*16;
+      if (inGap(x,gaps)||inGap(x+24,gaps)) continue;
+      const pr=expand({x,y:H-32,w:24,h:16},8);
+      if (pipes.some(p=>rectCollide(pr,p))) continue;
+      if (platforms.some(p=>p.type==='platform'&&rectCollide(pr,p))) continue;
+      if (questBlocks.some(q=>rectCollide(pr,q))) continue;
+      pipes.push({x, y:H-32, w:24, h:16}); break;
+    }
+  }
+
+  // ---- Coins (avoid obstacles) ----
+  const obstacles=[...platforms,...questBlocks,...pipes];
+  function coinCollides(x,y){const r={x,y,w:6,h:8};for(const o of obstacles)if(rectCollide(r,o))return true;return false;}
   let v = 0;
   for (let x=120; x<9900; x+=80+v) {
     v = Math.random()*50;
     const y = (Math.random()>0.4) ? H-60-Math.random()*40 : H-28;
-    coins.push({x,y,w:6,h:8,collected:false});
+    if (!coinCollides(x,y)) coins.push({x,y,w:6,h:8,collected:false});
   }
   // Coin arcs
   for (let x=300; x<9500; x+=400+Math.random()*200) {
-    for (let i=0; i<5; i++) coins.push({x:x+i*12, y:H-50-i*10, w:6,h:8,collected:false});
+    for (let i=0; i<5; i++) {
+      const cx=x+i*12, cy=H-50-i*10;
+      if (!coinCollides(cx,cy)) coins.push({x:cx,y:cy,w:6,h:8,collected:false});
+    }
   }
-  // Coin arcs over gaps (show jump trajectory)
+  // Coin arcs over gaps
   for (const g of gaps) {
     for (let i=0; i<5; i++) {
       const t=i/4, cx=g[0]-8+t*(g[1]-g[0]+16), cy=H-20-Math.sin(t*Math.PI)*18;
-      coins.push({x:cx, y:cy, w:6, h:8, collected:false});
+      if (!coinCollides(cx,cy)) coins.push({x:cx, y:cy, w:6, h:8, collected:false});
     }
   }
 
   // ---- Enemies ----
-  // Ground enemies per biome (dense spawns to compensate for gap falls)
-  for (let x=300; x<2200; x+=140+Math.random()*60) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.6-Math.random()*0.4, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
-  for (let x=2200; x<5200; x+=130+Math.random()*50) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.7-Math.random()*0.4, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
-  for (let x=5200; x<7700; x+=120+Math.random()*40) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.8-Math.random()*0.4, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
-  for (let x=7700; x<9900; x+=100+Math.random()*40) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.9-Math.random()*0.5, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
-  // Flying enemies (cave, sky, volcano)
+  // Ground enemies per biome
+  for (let x=300; x<2200; x+=120+Math.random()*40) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.6-Math.random()*0.4, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
+  for (let x=2200; x<5200; x+=110+Math.random()*40) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.7-Math.random()*0.4, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
+  for (let x=5200; x<7700; x+=100+Math.random()*30) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.8-Math.random()*0.4, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
+  for (let x=7700; x<10000; x+=80+Math.random()*30) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.9-Math.random()*0.5, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
+  // Flying enemies
   for (let x=2400; x<5200; x+=200+Math.random()*100) {
     enemies.push({x, y:H-60-Math.random()*40, w:12, h:12, vx:-0.5-Math.random()*0.3, vy:0, type:'flying', alive:true, hp:1, frame:0, flyOff:0, flyPhase: Math.random()*Math.PI*2});
   }
   for (let x=5200; x<7700; x+=180+Math.random()*80) {
     enemies.push({x, y:H-60-Math.random()*40, w:12, h:12, vx:-0.6-Math.random()*0.3, vy:0, type:'flying', alive:true, hp:1, frame:0, flyOff:0, flyPhase: Math.random()*Math.PI*2});
   }
-  for (let x=7700; x<9800; x+=160+Math.random()*80) {
+  for (let x=7700; x<10000; x+=160+Math.random()*80) {
     enemies.push({x, y:H-60-Math.random()*40, w:12, h:12, vx:-0.7-Math.random()*0.4, vy:0, type:'flying', alive:true, hp:1, frame:0, flyOff:0, flyPhase: Math.random()*Math.PI*2});
   }
-  // Big enemies (sky + volcano)
+  // Big enemies
   for (let x=5500; x<7700; x+=250+Math.random()*100) {
     enemies.push({x, y:H-32, w:18, h:16, vx:-0.5-Math.random()*0.3, vy:0, type:'big', alive:true, hp:2, frame:0});
   }
-  for (let x=7700; x<9800; x+=220+Math.random()*80) {
+  for (let x=7700; x<10000; x+=220+Math.random()*80) {
     enemies.push({x, y:H-32, w:18, h:16, vx:-0.6-Math.random()*0.3, vy:0, type:'big', alive:true, hp:2, frame:0});
   }
 
-  // ---- Pipes (decorative) ----
-  pipes.push({x:600, y:H-32, w:24, h:16});
-  pipes.push({x:1400, y:H-32, w:24, h:16});
-  pipes.push({x:2400, y:H-32, w:24, h:16});
-  pipes.push({x:3800, y:H-32, w:24, h:16});
-  pipes.push({x:5200, y:H-32, w:24, h:16});
-  pipes.push({x:7000, y:H-32, w:24, h:16});
-  pipes.push({x:8600, y:H-32, w:24, h:16});
-
   // ---- Checkpoints ----
-  checkpoints.push({x:1000, y:H-20, w:8, h:16, reached:false});
-  checkpoints.push({x:2000, y:H-20, w:8, h:16, reached:false});
-  checkpoints.push({x:3000, y:H-20, w:8, h:16, reached:false});
-  checkpoints.push({x:4000, y:H-20, w:8, h:16, reached:false});
-  checkpoints.push({x:5000, y:H-20, w:8, h:16, reached:false});
-  checkpoints.push({x:6000, y:H-20, w:8, h:16, reached:false});
-  checkpoints.push({x:7000, y:H-20, w:8, h:16, reached:false});
-  checkpoints.push({x:8000, y:H-20, w:8, h:16, reached:false});
-  checkpoints.push({x:9000, y:H-20, w:8, h:16, reached:false});
+  for (let x=1000; x<=9000; x+=1000) {
+    const off = randInt(-80,80);
+    checkpoints.push({x:x+off, y:H-20, w:8, h:16, reached:false});
+  }
 
   // Add moving platform rects as passable platforms
   for (const mp of movingPlats) platforms.push(mp);
@@ -295,7 +374,7 @@ function resetPlayer() {
 function resetGame() {
   score=0; coinCount=0; lives=3; distance=0; camera.x=0;
   gameOver=false; screenShake=0; gameRunning=true;
-  comboCount=0; comboTimer=0;
+  comboCount=0; comboTimer=0; lastEnemySpawnX=0;
   buildLevel(); resetPlayer(); powerUpPopups=[];
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.add('hidden');
@@ -416,6 +495,28 @@ function update() {
     for (const plat of platforms) { if (plat===mp) plat.x=mp.x; }
     if (p.x+p.w>mp.x && p.x<mp.x+mp.w && p.y+p.h>=mp.y-2 && p.y+p.h<=mp.y+4) {
       p.x+=dx;
+    }
+  }
+
+  // ---- Periodic enemy spawn ahead ----
+  if (p.x > lastEnemySpawnX + 400 && p.x < 9800) {
+    lastEnemySpawnX = Math.floor(p.x / 400) * 400;
+    const startX = lastEnemySpawnX + 200;
+    const endX = startX + 300;
+    const eType = getBiomeAt(startX) >= BIOME.SKY ? ['ground','big'] : ['ground'];
+    for (let x=startX; x<endX; x+=100+Math.random()*60) {
+      if (levelGaps.some(g=>x>=g[0]&&x<g[1])) continue;
+      enemies.push({x,y:H-28,w:12,h:12,vx:-0.7-Math.random()*0.5,vy:0,type:'ground',alive:true,hp:1,frame:0});
+    }
+    if (getBiomeAt(startX) !== BIOME.MEADOW) {
+      for (let x=startX+50; x<endX; x+=180+Math.random()*80) {
+        enemies.push({x,y:H-60-Math.random()*40,w:12,h:12,vx:-0.5-Math.random()*0.3,vy:0,type:'flying',alive:true,hp:1,frame:0,flyOff:0,flyPhase:Math.random()*Math.PI*2});
+      }
+    }
+    if (getBiomeAt(startX) >= BIOME.SKY) {
+      for (let x=startX+80; x<endX; x+=250+Math.random()*100) {
+        enemies.push({x,y:H-32,w:18,h:16,vx:-0.4-Math.random()*0.3,vy:0,type:'big',alive:true,hp:2,frame:0});
+      }
     }
   }
 
