@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUPER PIXEL LAND DX - Promo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0f380f; display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; }
+canvas { image-rendering: pixelated; border: 4px solid #306230; max-width: 100%; }
+p { color: #8bac0f; font-family: monospace; margin-top: 12px; font-size: 14px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<p>Right-click → Save Image As</p>
+<script>
+const W=1080, H=1080, S=8;
+const c=document.getElementById('c');
+c.width=W; c.height=H;
+const ctx=c.getContext('2d');
+
+const C={
+  white:'#9bbc0f', light:'#8bac0f', dark:'#306230', black:'#0f380f',
+  red:'#a02020', yellow:'#c8b800', skin:'#e8c888', blue:'#1a2a4a', brown:'#5c3a1e',
+};
+
+// ---- Pixel Font ----
+const FONT={
+  A:[0b01110,0b10001,0b11111,0b10001,0b10001,0b10001],
+  B:[0b11110,0b10001,0b11110,0b10001,0b10001,0b11110],
+  C:[0b01110,0b10001,0b10000,0b10000,0b10001,0b01110],
+  D:[0b11110,0b10001,0b10001,0b10001,0b10001,0b11110],
+  E:[0b11111,0b10000,0b11110,0b10000,0b10000,0b11111],
+  F:[0b11111,0b10000,0b11110,0b10000,0b10000,0b10000],
+  G:[0b01110,0b10001,0b10000,0b10111,0b10001,0b01110],
+  H:[0b10001,0b10001,0b11111,0b10001,0b10001,0b10001],
+  I:[0b00100,0b01110,0b00100,0b00100,0b00100,0b01110],
+  J:[0b00010,0b00010,0b00010,0b00010,0b10010,0b01100],
+  K:[0b10001,0b10010,0b11100,0b10010,0b10001,0b10001],
+  L:[0b01000,0b01000,0b01000,0b01000,0b01000,0b01111],
+  M:[0b10001,0b11011,0b10101,0b10001,0b10001,0b10001],
+  N:[0b10001,0b10001,0b11001,0b10101,0b10011,0b10001],
+  O:[0b01110,0b10001,0b10001,0b10001,0b10001,0b01110],
+  P:[0b01110,0b10001,0b10001,0b11110,0b10000,0b10000],
+  R:[0b11110,0b10001,0b11110,0b10100,0b10010,0b10001],
+  S:[0b01110,0b10001,0b00110,0b01000,0b10001,0b01110],
+  T:[0b11111,0b00100,0b00100,0b00100,0b00100,0b00100],
+  U:[0b10001,0b10001,0b10001,0b10001,0b10001,0b01110],
+  V:[0b10001,0b10001,0b10001,0b10001,0b01110,0b00100],
+  W:[0b10001,0b10001,0b10001,0b10101,0b11011,0b10001],
+  X:[0b10001,0b01110,0b00100,0b00100,0b01110,0b10001],
+  Y:[0b10001,0b01010,0b00100,0b00100,0b00100,0b00100],
+  Z:[0b11111,0b00001,0b00011,0b00110,0b01100,0b11111],
+  _0:[0b01110,0b10001,0b10011,0b10101,0b11001,0b01110],
+  _1:[0b00100,0b01100,0b00100,0b00100,0b00100,0b01110],
+  _2:[0b01110,0b10001,0b00010,0b00100,0b01000,0b11111],
+  _3:[0b01110,0b10001,0b00110,0b00001,0b10001,0b01110],
+  _4:[0b00010,0b00110,0b01010,0b10010,0b11111,0b00010],
+  _5:[0b11111,0b10000,0b11110,0b00001,0b10001,0b01110],
+  _6:[0b01110,0b10000,0b11110,0b10001,0b10001,0b01110],
+  _7:[0b11111,0b00001,0b00010,0b00100,0b01000,0b01000],
+  _8:[0b01110,0b10001,0b01110,0b10001,0b10001,0b01110],
+  _9:[0b01110,0b10001,0b01111,0b00001,0b00010,0b01100],
+  SP:[0,0,0,0,0,0],
+  _dot:[0,0,0,0,0,0b00100],
+  _excl:[0b00100,0b00100,0b00100,0b00100,0b00000,0b00100],
+  _ques:[0b01110,0b10001,0b00010,0b00100,0b00000,0b00100],
+  _plus:[0,0b00100,0b01110,0b00100,0,0],
+  _dash:[0,0,0b01110,0,0,0],
+  _star:[0b10101,0b01110,0b11111,0b01110,0b10101,0],
+};
+
+function getG(ch){
+  if(ch>='A'&&ch<='Z')return FONT[ch];
+  if(ch>='0'&&ch<='9')return FONT['_'+ch];
+  if(ch===' ')return FONT.SP;
+  if(ch==='.')return FONT._dot; if(ch==='!')return FONT._excl;
+  if(ch==='?')return FONT._ques; if(ch==='+')return FONT._plus;
+  if(ch==='-')return FONT._dash; if(ch==='*')return FONT._star;
+}
+
+function drawPixelChar(ch,x,y,col){
+  const g=getG(ch); if(!g)return;
+  ctx.fillStyle=col;
+  for(let r=0;r<6;r++)for(let c=0;c<5;c++)if(g[r]&(1<<(4-c)))ctx.fillRect((x+c)*S,(y+r)*S,S,S);
+}
+function drawPixelText(t,x,y,col){
+  for(let i=0;i<t.length;i++)drawPixelChar(t[i],x+i*6,y,col);
+}
+function drawBigPixelText(t,x,y,col,fs){
+  for(let i=0;i<t.length;i++){
+    const g=getG(t[i]); if(!g)continue;
+    ctx.fillStyle=col;
+    for(let r=0;r<6;r++)for(let c=0;c<5;c++)if(g[r]&(1<<(4-c)))ctx.fillRect((x+i*6*fs+c*fs)*S,(y+r*fs)*S,fs*S,fs*S);
+  }
+}
+
+// ---- DRAW ----
+const MP=W/S;
+
+// Background - dark green
+ctx.fillStyle=C.black; ctx.fillRect(0,0,W,H);
+
+// Game scene area - starts lower to avoid overlapping FREE
+const sceneY=520;
+
+// Dark top section (covers title + FREE completely)
+ctx.fillStyle=C.black; ctx.fillRect(0,0,W,sceneY);
+
+// Scene background (light green)
+ctx.fillStyle=C.white; ctx.fillRect(0,sceneY,W,320);
+// Bottom dark section
+ctx.fillStyle=C.black; ctx.fillRect(0,H-250,W,250);
+
+// ---- TOP SECTION (0-330): dark green with sky ----
+// Stars
+ctx.fillStyle=C.white;
+for(let i=0;i<20;i++){
+  const sx=30+Math.random()*200, sy=10+Math.random()*30;
+  ctx.fillRect(sx*S,sy*S,S,S);
+  ctx.fillRect((sx+1)*S,sy*S,S,S);
+}
+// Simple clouds
+ctx.fillStyle=C.dark;
+for(let i=0;i<3;i++){
+  const cx=10+i*45, cy=5+i*8;
+  ctx.fillRect(cx*S,cy*S,20*S,6*S);
+  ctx.fillRect((cx+4)*S,(cy-2)*S,12*S,4*S);
+  ctx.fillRect((cx+6)*S,(cy-4)*S,8*S,3*S);
+}
+
+// Hill silhouette at horizon
+ctx.fillStyle=C.white;
+for(let i=0;i<12;i++){
+  const hx=i*12-2, hy=38+Math.sin(i*1.7)*8;
+  ctx.fillRect(hx*S,hy*S,12*S,4*S); ctx.fillRect((hx+2)*S,(hy-2)*S,8*S,2*S);
+}
+
+// ---- TITLE ----
+const t='SUPER PIXEL LAND DX';
+const tLen=t.length*6;
+const tx=Math.round((MP-tLen)/2);
+// Dark strip behind title
+ctx.fillStyle=C.red; ctx.fillRect(0,8*S-2*S,MP*S,14*S);
+ctx.fillStyle=C.black; ctx.fillRect(0,8*S-1*S,MP*S,12*S);
+drawPixelText(t,tx,8,C.white);
+
+// Subtitle
+const st='AN 8-BIT ADVENTURE';
+drawPixelText(st,Math.round((MP-st.length*6)/2),21,C.light);
+
+// ---- "FREE!" ----
+const fs=5;
+const fg='FREE';
+const fw=fg.length*6*fs;
+const fx=Math.round((MP-fw)/2);
+const fy=30;
+
+// Box behind FREE
+ctx.fillStyle=C.red;
+ctx.fillRect((fx-4)*S,(fy-3)*S,fw*S+8*S,6*fs*S+6*S);
+ctx.fillStyle=C.black;
+ctx.fillRect((fx-5)*S,(fy-4)*S,fw*S+10*S,6*fs*S+8*S);
+ctx.fillStyle=C.red;
+ctx.fillRect((fx-4)*S,(fy-3)*S,fw*S+8*S,6*fs*S+6*S);
+
+// Outline
+drawBigPixelText(fg,fx,fy,C.black,fs);
+drawBigPixelText(fg,fx-1,fy,C.black,fs);
+drawBigPixelText(fg,fx+1,fy,C.black,fs);
+drawBigPixelText(fg,fx,fy-1,C.black,fs);
+drawBigPixelText(fg,fx,fy+1,C.black,fs);
+// Fill
+drawBigPixelText(fg,fx,fy,C.white,fs);
+
+// Inner shadow on FREE
+for(let i=0;i<fg.length;i++){
+  const g=getG(fg[i]); if(!g)continue;
+  for(let r=0;r<6;r++)for(let c=0;c<5;c++){
+    if(g[r]&(1<<(4-c))){
+      ctx.fillStyle='rgba(0,0,0,0.4)';
+      ctx.fillRect((fx+i*6*fs+c*fs+1)*S,(fy+r*fs+1)*S,(fs-1)*S,(fs-1)*S);
+    }
+  }
+}
+
+// ---- MIDDLE SECTION ----
+// Ground platform
+const soff=16;
+const gndY=62+soff;
+ctx.fillStyle=C.black;
+ctx.fillRect(0,gndY*S,MP*S,3*S);
+// Brick pattern
+for(let i=0;i<MP;i+=8){
+  ctx.fillStyle=C.dark;
+  ctx.fillRect(i*S,gndY*S,3*S,3*S);
+  ctx.fillRect((i+4)*S,gndY*S,3*S,3*S);
+}
+
+// Background mountains
+ctx.fillStyle=C.light;
+for(let i=0;i<8;i++){
+  const mx=i*20-2, my=50+soff-Math.sin(i*1.3)*6;
+  ctx.fillRect(mx*S,my*S,14*S,12*S);
+  ctx.fillRect((mx+2)*S,(my-3)*S,10*S,3*S);
+  ctx.fillRect((mx+3)*S,(my-4)*S,8*S,S);
+}
+
+// Question blocks
+function drawQBlock(qx,qy){
+  ctx.fillStyle=C.yellow; ctx.fillRect(qx*S,qy*S,8*S,8*S);
+  ctx.fillStyle=C.black; ctx.fillRect((qx+1)*S,(qy+1)*S,6*S,6*S);
+  ctx.fillStyle=C.yellow; ctx.fillRect((qx+2)*S,(qy+2)*S,4*S,4*S);
+  ctx.fillStyle=C.black; ctx.fillRect((qx+2)*S,qy*S,4*S,S);
+  ctx.fillRect((qx+3)*S,(qy-1)*S,2*S,S);
+}
+drawQBlock(30,56+soff); drawQBlock(64,52+soff); drawQBlock(98,56+soff);
+
+// Coins
+function drawCoin(cx,cy){
+  ctx.fillStyle=C.yellow; ctx.fillRect(cx*S,cy*S,4*S,6*S);
+  ctx.fillStyle=C.white; ctx.fillRect((cx+1)*S,(cy+1)*S,2*S,4*S);
+}
+drawCoin(26,63+soff); drawCoin(80,62+soff); drawCoin(108,63+soff);
+
+// Goomba
+function drawGoomba(gx,gy){
+  ctx.fillStyle=C.brown; ctx.fillRect(gx*S,gy*S,8*S,8*S);
+  ctx.fillStyle=C.black; ctx.fillRect((gx+1)*S,(gy+2)*S,6*S,2*S);
+  ctx.fillRect(gx*S,(gy+6)*S,8*S,2*S);
+  ctx.fillStyle=C.white; ctx.fillRect((gx+2)*S,(gy+1)*S,2*S,2*S);
+  ctx.fillStyle=C.black; ctx.fillRect((gx+2)*S,(gy+1)*S,S,S);
+  ctx.fillStyle=C.black; ctx.fillRect((gx+5)*S,(gy+1)*S,S,S);
+  ctx.fillStyle=C.black; ctx.fillRect((gx+1)*S,(gy+6)*S,2*S,S);
+  ctx.fillStyle=C.black; ctx.fillRect((gx+5)*S,(gy+6)*S,2*S,S);
+}
+drawGoomba(14,63+soff); drawGoomba(102,63+soff);
+
+// Player (Mario-style)
+function drawPlayer(px,py){
+  ctx.fillStyle=C.red; ctx.fillRect((px-1)*S,py*S,10*S,3*S);
+  ctx.fillStyle=C.skin; ctx.fillRect(px*S,(py+3)*S,8*S,4*S);
+  ctx.fillStyle=C.black; ctx.fillRect((px+3)*S,(py+4)*S,S,S);
+  ctx.fillStyle=C.red; ctx.fillRect((px+1)*S,(py+7)*S,6*S,4*S);
+  ctx.fillStyle=C.blue; ctx.fillRect(px*S,(py+8)*S,2*S,5*S);
+  ctx.fillStyle=C.blue; ctx.fillRect((px+6)*S,(py+8)*S,2*S,5*S);
+  ctx.fillStyle=C.blue; ctx.fillRect((px+2)*S,(py+9)*S,4*S,2*S);
+  ctx.fillStyle=C.yellow; ctx.fillRect((px+2)*S,(py+9)*S,S,S);
+  ctx.fillStyle=C.yellow; ctx.fillRect((px+5)*S,(py+9)*S,S,S);
+  ctx.fillStyle=C.blue; ctx.fillRect(px*S,(py+11)*S,3*S,3*S);
+  ctx.fillStyle=C.blue; ctx.fillRect((px+5)*S,(py+11)*S,3*S,3*S);
+  ctx.fillStyle=C.brown; ctx.fillRect((px-1)*S,(py+14)*S,4*S,2*S);
+  ctx.fillStyle=C.brown; ctx.fillRect((px+5)*S,(py+14)*S,4*S,2*S);
+}
+drawPlayer(57,65+soff);
+
+// Pipe
+function drawPipe(px,py){
+  ctx.fillStyle=C.dark; ctx.fillRect(px*S,py*S,8*S,12*S);
+  ctx.fillStyle=C.black; ctx.fillRect((px-1)*S,py*S,10*S,2*S);
+  ctx.fillStyle=C.light; ctx.fillRect((px+2)*S,(py+3)*S,4*S,S);
+}
+drawPipe(125,61+soff);
+
+// Stars
+function drawStar(stx,sty){
+  ctx.fillStyle=C.yellow;
+  ctx.fillRect(stx*S,(sty+2)*S,S,S); ctx.fillRect((stx+1)*S,(sty+1)*S,S,S);
+  ctx.fillRect((stx+2)*S,sty*S,S,S); ctx.fillRect((stx+2)*S,(sty+2)*S,S,S);
+  ctx.fillRect((stx+2)*S,(sty+4)*S,S,S); ctx.fillRect((stx+3)*S,(sty+1)*S,S,S);
+  ctx.fillRect((stx+4)*S,(sty+2)*S,S,S);
+  ctx.fillStyle=C.black; ctx.fillRect((stx+2)*S,(sty+2)*S,S,S);
+}
+drawStar(16,50+soff); drawStar(110,48+soff); drawStar(46,54+soff); drawStar(84,52+soff);
+drawStar(72,49+soff); drawStar(58,48+soff);
+
+// ---- BOTTOM SECTION ----
+// "NOW AVAILABLE" text
+const na='NOW AVAILABLE';
+ctx.fillStyle=C.red;
+ctx.fillRect(0,828,MP*S,2*S);
+ctx.fillStyle=C.black;
+ctx.fillRect(0,813,MP*S,1*S);
+drawPixelText(na,Math.round((MP-na.length*6)/2),104,C.white);
+
+// Tagline
+const tag='PLAY FREE ON WEB';
+drawPixelText(tag,Math.round((MP-tag.length*6)/2),113,C.light);
+
+// Bottom bars
+ctx.fillStyle=C.red;
+ctx.fillRect(0,912,W,2);
+ctx.fillStyle=C.dark;
+ctx.fillRect(0,914,W,2);
+
+// Small print
+const sp='NO DOWNLOAD  -  JUST JUMP AND RUN';
+drawPixelText(sp,Math.round((MP-sp.length*6)/2),126,C.light);
+
+// Decorative pixel border at bottom
+ctx.fillStyle=C.dark;
+for(let i=0;i<MP;i+=4){
+  ctx.fillRect(i*S,133*S,2*S,S);
+}
+
+document.title='SUPER PIXEL LAND DX - Promo';
+console.log('Done');
+</script>
+</body>
+</html>
