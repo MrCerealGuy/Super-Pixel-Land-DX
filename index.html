@@ -73,7 +73,6 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
     <p>Ein Jump'n'Run im GameBoy-Stil</p>
     <p style="font-size:0.8em;margin-top:12px;color:#306230">Pfeiltasten + Leertaste (Desktop)</p>
     <p style="font-size:0.8em;color:#306230">Touch-Buttons (Mobil) &middot; R = Neustart</p>
-    <p style="font-size:0.8em;color:#306230">Weltkarte: Pfeile + Sprung zum Starten</p>
     <div id="hsText" style="margin-top:10px;color:#8bac0f;font-size:0.9em"></div>
     <button class="btn" id="startBtn">▶ START</button>
     <button class="btn" id="helpBtn" style="margin-top:8px;font-size:0.9em;padding:8px 24px">❓ HILFE</button>
@@ -1679,10 +1678,7 @@ function drawMap() {
   ctx.fillStyle='#0f380f';
   ctx.fillRect(8,H-20,W-16,14);
   ctx.fillStyle='#9bbc0f';
-  drawPixelText(sl.name,14,H-18,'#0f380f');
-  // Controls hint
-  ctx.fillStyle='#8bac0f';
-  drawPixelText('PFEIL+SPRUNG',28,H-8,'#306230');
+  drawPixelText(sl.name,14,H-18,'#9bbc0f');
 }
 
 function draw() {
