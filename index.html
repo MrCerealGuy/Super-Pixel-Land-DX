@@ -62,10 +62,6 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
         <button id="rightBtn">▶</button>
       </div>
     </div>
-        <button id="leftBtn">◀</button>
-        <button id="rightBtn">▶</button>
-      </div>
-    </div>
     <div id="rightGroup">
       <button id="enterBtn">↓</button>
       <button id="fireBtn">FEUER</button>
@@ -678,7 +674,7 @@ function update() {
     document.getElementById('mapTouchBtn').style.display='none';
   document.getElementById('enterBtn').style.display='none';
   document.getElementById('fireBtn').style.display='none';
-    document.getElementById('controls').style.display='flex';
+  document.getElementById('controls').style.display='flex';
     mapTimer++;
     if (keys.jumpPressed) {
       keys.jumpPressed=false;
@@ -688,6 +684,9 @@ function update() {
         currentLevel = selectedLevel;
         gameScreen = 'playing';
         document.getElementById('controls').style.display='flex';
+        document.getElementById('rightGroup').style.display='';
+        document.getElementById('enterBtn').style.display='';
+        document.getElementById('fireBtn').style.display='';
         document.getElementById('restartTouchBtn').style.display='';
         document.getElementById('mapTouchBtn').style.display='';
         document.getElementById('statusBar').style.display='';
