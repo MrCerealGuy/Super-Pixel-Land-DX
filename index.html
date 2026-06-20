@@ -24,6 +24,8 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
 #jumpBtn { min-width: 90px; font-size: 24px; padding: 14px 10px; background: rgba(48,98,48,0.85); }
 #restartTouchBtn { min-width: 54px; font-size: 22px; padding: 10px 8px; background: rgba(160,32,32,0.5); }
 #mapTouchBtn { min-width: 54px; font-size: 16px; padding: 6px 4px; background: rgba(32,80,160,0.5); }
+#topBtns { position: absolute; top: 52px; right: 12px; display: flex; gap: 4px; pointer-events: none; z-index: 1; }
+#topBtns * { pointer-events: auto; }
 #enterBtn { min-width: 44px; font-size: 20px; padding: 8px 6px; background: rgba(48,98,48,0.5); display: none; }
 #rightGroup { display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
 #rightGroup * { pointer-events: auto; }
@@ -49,11 +51,17 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
     <div>MUNZEN <span id="coinsDisplay">00</span></div>
   </div>
   <div id="powerUpBar"><span id="livesDisplay">LEBEN 3</span> <span id="powerDisplay"></span></div>
+  <div id="topBtns">
+    <button id="restartTouchBtn">↻</button>
+    <button id="mapTouchBtn">KARTE</button>
+  </div>
   <div id="controls">
     <div id="leftGroup">
-      <button id="restartTouchBtn">↻</button>
-      <button id="mapTouchBtn">KARTE</button>
       <div id="dpad">
+        <button id="leftBtn">◀</button>
+        <button id="rightBtn">▶</button>
+      </div>
+    </div>
         <button id="leftBtn">◀</button>
         <button id="rightBtn">▶</button>
       </div>
