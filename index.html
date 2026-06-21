@@ -103,10 +103,10 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
   </div>
   <div id="cheatScreen" class="hidden">
     <h1 style="font-size:1.4em">CHEATS</h1>
-    <div style="color:#8bac0f;font-size:0.8em;text-align:center;margin:8px 0">
+    <div style="color:#8bac0f;font-size:0.8em;text-align:center;margin:8px 0;display:flex;flex-direction:column;align-items:center">
       <button class="btn" id="infiniteLivesBtn" style="font-size:0.8em;padding:8px 20px;margin-bottom:8px">UNENDLICH LEBEN: AUS</button>
       <button class="btn" id="immortalBtn" style="font-size:0.8em;padding:8px 20px;margin-bottom:8px">UNSTERBLICH: AUS</button>
-      <button class="btn" id="unlockAllBtn" style="font-size:0.8em;padding:8px 20px;margin-bottom:8px">ALLE LEVEL FREISCHALTEN</button>
+      <button class="btn" id="unlockAllBtn" style="font-size:0.8em;padding:8px 20px;margin-bottom:8px">ALLE LEVEL FREISCHALTEN: AUS</button>
     </div>
     <button class="btn" id="cheatBackBtn" style="margin-top:8px;font-size:0.7em;padding:6px 16px">← ZURÜCK</button>
   </div>
@@ -2011,8 +2011,8 @@ document.getElementById('infiniteLivesBtn').addEventListener('click',()=>{cheatI
 document.getElementById('infiniteLivesBtn').addEventListener('touchend',e=>{e.preventDefault();cheatInfiniteLives=!cheatInfiniteLives;document.getElementById('infiniteLivesBtn').textContent='UNENDLICH LEBEN: '+(cheatInfiniteLives?'EIN':'AUS');});
 document.getElementById('immortalBtn').addEventListener('click',()=>{cheatImmortal=!cheatImmortal;document.getElementById('immortalBtn').textContent='UNSTERBLICH: '+(cheatImmortal?'EIN':'AUS');});
 document.getElementById('immortalBtn').addEventListener('touchend',e=>{e.preventDefault();cheatImmortal=!cheatImmortal;document.getElementById('immortalBtn').textContent='UNSTERBLICH: '+(cheatImmortal?'EIN':'AUS');});
-document.getElementById('unlockAllBtn').addEventListener('click',()=>{for(const l of levels)l.completed=true;});
-document.getElementById('unlockAllBtn').addEventListener('touchend',e=>{e.preventDefault();for(const l of levels)l.completed=true;});
+document.getElementById('unlockAllBtn').addEventListener('click',()=>{const on=levels.some(l=>!l.completed);for(const l of levels)l.completed=on;document.getElementById('unlockAllBtn').textContent='ALLE LEVEL FREISCHALTEN: '+(on?'EIN':'AUS');});
+document.getElementById('unlockAllBtn').addEventListener('touchend',e=>{e.preventDefault();const on=levels.some(l=>!l.completed);for(const l of levels)l.completed=on;document.getElementById('unlockAllBtn').textContent='ALLE LEVEL FREISCHALTEN: '+(on?'EIN':'AUS');});
 
 setupInput();
 
