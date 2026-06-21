@@ -105,9 +105,10 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
     <h1 style="font-size:1.4em">CHEATS</h1>
     <div style="color:#8bac0f;font-size:0.8em;text-align:center;margin:8px 0">
       <button class="btn" id="infiniteLivesBtn" style="font-size:0.8em;padding:8px 20px;margin-bottom:8px">UNENDLICH LEBEN: AUS</button>
+      <button class="btn" id="immortalBtn" style="font-size:0.8em;padding:8px 20px;margin-bottom:8px">UNSTERBLICH: AUS</button>
+      <button class="btn" id="unlockAllBtn" style="font-size:0.8em;padding:8px 20px;margin-bottom:8px">ALLE LEVEL FREISCHALTEN</button>
     </div>
     <button class="btn" id="cheatBackBtn" style="margin-top:8px;font-size:0.7em;padding:6px 16px">← ZURÜCK</button>
-  </div>
   </div>
   <div id="gameOverScreen" class="hidden">
     <h1>GAME OVER</h1>
@@ -139,7 +140,7 @@ let camera = { x: 0 };
 let platforms = [], coins = [], enemies = [], particles = [], movingPlats = [];
 let questBlocks = [], powerups = [], pipes = [], checkpoints = [], powerUpPopups = [];
 let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0;
-let cheatInfiniteLives = false;
+let cheatInfiniteLives = false, cheatImmortal = false;
 let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
 let biome = BIOME.MEADOW, biomeTrans = 0;
 let comboCount = 0, comboTimer = 0;
@@ -562,6 +563,8 @@ function enterBonusRoom(pipe) {
   if (inBonusRoom) return;
   inBonusRoom = true;
   bonusRoomPipe = pipe;
+  stopKillstreakMusic();
+  killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0;
   // Place player safely away from exit pipe
   player.x = 5;
   player.y = H - player.h - 1;
@@ -1098,7 +1101,7 @@ function update() {
           e.vx*=1.5; // angry!
         }
       } else if (p.star<=0 && p.invTimer<=0) {
-        playerDie();
+        playerDie(false);
       }
     }
   }
@@ -1155,7 +1158,7 @@ function update() {
   }
 
   // Fall off
-  if (p.y>H) { if (!p.dead) playerDie(); }
+  if (p.y>H) { if (!p.dead) playerDie(true); }
 
   // Win — flagpole
   if (goalFlag && !goalFlag.reached && !p.won) {
@@ -1206,11 +1209,16 @@ function spawnPowerUp(x,y,type) {
   powerups.push(pu);
 }
 
-function playerDie() {
+function playerDie(fromPit) {
   if (player.dead || player.invTimer>0) return;
   stopStarMusic();
   stopKillstreakMusic();
   killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0;
+  // Immortal cheat: only pit kills, no enemy damage
+  if (cheatImmortal && !fromPit) {
+    player.invTimer=20; sfxHit(); screenShake=2;
+    return;
+  }
   // If big, shrink instead of dying
   if (player.big) {
     player.big=false; player.h=14; player.w=10; player.y+=6;
@@ -1966,6 +1974,12 @@ function startGame() {
   gameScreen = 'map'; gameRunning = true; gameOver = false;
   goFullscreen();
 }
+function restartFromGameOver() {
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+  gameOver = false; gameRunning = false;
+  currentLevel = 0; selectedLevel = 0; lives = 3;
+}
 function showHelp() {
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('helpScreen').classList.remove('hidden');
@@ -1979,8 +1993,8 @@ function hideHelp() {
 loadHighScore();
 document.getElementById('startBtn').addEventListener('click',startGame);
 document.getElementById('startBtn').addEventListener('touchend',e=>{e.preventDefault();startGame();});
-document.getElementById('restartBtn').addEventListener('click',startGame);
-document.getElementById('restartBtn').addEventListener('touchend',e=>{e.preventDefault();startGame();});
+document.getElementById('restartBtn').addEventListener('click',restartFromGameOver);
+document.getElementById('restartBtn').addEventListener('touchend',e=>{e.preventDefault();restartFromGameOver();});
 document.getElementById('restartTouchBtn').addEventListener('click',restartGame);
 document.getElementById('restartTouchBtn').addEventListener('touchend',e=>{e.preventDefault();restartGame();});
 document.getElementById('mapTouchBtn').addEventListener('click',returnToMap);
@@ -1995,6 +2009,10 @@ document.getElementById('cheatBackBtn').addEventListener('click',()=>{document.g
 document.getElementById('cheatBackBtn').addEventListener('touchend',e=>{e.preventDefault();document.getElementById('cheatScreen').classList.add('hidden');document.getElementById('helpScreen').classList.remove('hidden');});
 document.getElementById('infiniteLivesBtn').addEventListener('click',()=>{cheatInfiniteLives=!cheatInfiniteLives;document.getElementById('infiniteLivesBtn').textContent='UNENDLICH LEBEN: '+(cheatInfiniteLives?'EIN':'AUS');});
 document.getElementById('infiniteLivesBtn').addEventListener('touchend',e=>{e.preventDefault();cheatInfiniteLives=!cheatInfiniteLives;document.getElementById('infiniteLivesBtn').textContent='UNENDLICH LEBEN: '+(cheatInfiniteLives?'EIN':'AUS');});
+document.getElementById('immortalBtn').addEventListener('click',()=>{cheatImmortal=!cheatImmortal;document.getElementById('immortalBtn').textContent='UNSTERBLICH: '+(cheatImmortal?'EIN':'AUS');});
+document.getElementById('immortalBtn').addEventListener('touchend',e=>{e.preventDefault();cheatImmortal=!cheatImmortal;document.getElementById('immortalBtn').textContent='UNSTERBLICH: '+(cheatImmortal?'EIN':'AUS');});
+document.getElementById('unlockAllBtn').addEventListener('click',()=>{for(const l of levels)l.completed=true;});
+document.getElementById('unlockAllBtn').addEventListener('touchend',e=>{e.preventDefault();for(const l of levels)l.completed=true;});
 
 setupInput();
 
