@@ -42,6 +42,32 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
 #startScreen p, #gameOverScreen p { color: #8bac0f; font-size: 1em; margin: 4px 0; text-align: center; }
 #startScreen .btn, #gameOverScreen .btn { pointer-events: auto; margin-top: 20px; background: #306230; color: #9bbc0f; border: 3px solid #9bbc0f; font-size: 1.3em; padding: 12px 36px; border-radius: 8px; font-family: monospace; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 #startScreen .btn:active, #gameOverScreen .btn:active { background: #0f380f; }
+#mapScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+#mapScreen * { pointer-events: auto; }
+#beendenBtn {
+  position: absolute; top: 10px; right: 10px;
+  background: #5c3a1e; color: #9bbc0f;
+  border: 3px solid #9bbc0f; font-size: 1.0em;
+  padding: 6px 16px; border-radius: 8px;
+  font-family: monospace; font-weight: bold; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#beendenBtn:active { background: #3a2a10; }
+#confirmDialog {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(15,56,15,0.92); pointer-events: auto; z-index: 20;
+}
+#confirmDialog p { color: #9bbc0f; font-size: 1.2em; margin: 8px 0; text-align: center; text-shadow: 2px 2px 0 #306230; }
+#confirmDialog .btn {
+  margin-top: 16px; background: #306230; color: #9bbc0f;
+  border: 3px solid #9bbc0f; font-size: 1.2em;
+  padding: 8px 28px; border-radius: 8px;
+  font-family: monospace; font-weight: bold; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#confirmDialog .btn:active { background: #0f380f; }
+#confirmDialog .btn-no { background: #5c3a1e; border-color: #8bac0f; color: #8bac0f; }
 .hidden { display: none !important; }
 </style>
 </head>
@@ -121,6 +147,17 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
     <p id="finalDist">STRECKE: 0m</p>
     <p id="finalHS" style="font-size:0.8em;color:#306230"></p>
     <button class="btn" id="restartBtn">↻ NEUSTART</button>
+  </div>
+  <div id="mapScreen" class="hidden">
+    <button id="beendenBtn">BEENDEN</button>
+  </div>
+  <div id="confirmDialog" class="hidden">
+    <p>WIRKLICH BEENDEN?</p>
+    <p style="font-size:0.8em">Fortschritt geht verloren!</p>
+    <div>
+      <button class="btn" id="confirmYes">JA</button>
+      <button class="btn btn-no" id="confirmNo">NEIN</button>
+    </div>
   </div>
 </div>
 <script>
@@ -924,6 +961,8 @@ function returnToMap() {
   document.getElementById('controls').style.display='flex';
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('confirmDialog').classList.add('hidden');
+  document.getElementById('mapScreen').classList.remove('hidden');
 }
 
 // ---- Update ----
@@ -948,6 +987,8 @@ function update() {
       } else {
         currentLevel = selectedLevel;
         gameScreen = 'playing';
+        document.getElementById('mapScreen').classList.add('hidden');
+        document.getElementById('confirmDialog').classList.add('hidden');
         document.getElementById('controls').style.display='flex';
         document.getElementById('rightGroup').style.display='';
         document.getElementById('enterBtn').style.display='';
@@ -1523,6 +1564,8 @@ function playerWins(bonus) {
     gameOver = false;
     document.getElementById('gameOverScreen').classList.add('hidden');
     document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('confirmDialog').classList.add('hidden');
+    document.getElementById('mapScreen').classList.remove('hidden');
   }, 1500);
 }
 
@@ -2336,7 +2379,7 @@ const FONT={
   O:[0b01110,0b10001,0b10001,0b10001,0b10001,0b01110],
   P:[0b01110,0b10001,0b10001,0b11110,0b10000,0b10000],
   R:[0b11110,0b10001,0b11110,0b10100,0b10010,0b10001],
-  S:[0b01110,0b10001,0b00110,0b01000,0b10001,0b01110],
+  S:[0b01110,0b10001,0b01100,0b00110,0b10001,0b01110],
   T:[0b11111,0b00100,0b00100,0b00100,0b00100,0b00100],
   U:[0b10001,0b10001,0b10001,0b10001,0b10001,0b01110],
   V:[0b10001,0b10001,0b10001,0b10001,0b01110,0b00100],
@@ -2397,13 +2440,17 @@ function startGame() {
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('helpScreen').classList.add('hidden');
   document.getElementById('cheatScreen').classList.add('hidden');
+  document.getElementById('confirmDialog').classList.add('hidden');
   currentLevel = 0; selectedLevel = 0; lives = 3;
   gameScreen = 'map'; gameRunning = true; gameOver = false;
+  document.getElementById('mapScreen').classList.remove('hidden');
   goFullscreen();
 }
 function restartFromGameOver() {
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
+  document.getElementById('mapScreen').classList.add('hidden');
+  document.getElementById('confirmDialog').classList.add('hidden');
   gameOver = false; gameRunning = false;
   currentLevel = 0; selectedLevel = 0; lives = 3;
 }
@@ -2440,6 +2487,25 @@ document.getElementById('immortalBtn').addEventListener('click',()=>{cheatImmort
 document.getElementById('immortalBtn').addEventListener('touchend',e=>{e.preventDefault();cheatImmortal=!cheatImmortal;document.getElementById('immortalBtn').textContent='UNSTERBLICH: '+(cheatImmortal?'EIN':'AUS');});
 document.getElementById('unlockAllBtn').addEventListener('click',()=>{const on=levels.some(l=>!l.completed);for(const l of levels)l.completed=on;document.getElementById('unlockAllBtn').textContent='ALLE LEVEL FREISCHALTEN: '+(on?'EIN':'AUS');});
 document.getElementById('unlockAllBtn').addEventListener('touchend',e=>{e.preventDefault();const on=levels.some(l=>!l.completed);for(const l of levels)l.completed=on;document.getElementById('unlockAllBtn').textContent='ALLE LEVEL FREISCHALTEN: '+(on?'EIN':'AUS');});
+
+function beendenConfirm() {
+  // Reset all progress
+  for (const l of levels) l.completed = false;
+  currentLevel = 0; selectedLevel = 0; lives = 3;
+  score = 0; coinCount = 0;
+  document.getElementById('scoreDisplay').textContent='000000';
+  document.getElementById('coinsDisplay').textContent='00';
+  document.getElementById('mapScreen').classList.add('hidden');
+  document.getElementById('confirmDialog').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+  stopStarMusic();
+}
+document.getElementById('beendenBtn').addEventListener('click',()=>{document.getElementById('confirmDialog').classList.remove('hidden');});
+document.getElementById('beendenBtn').addEventListener('touchend',e=>{e.preventDefault();document.getElementById('confirmDialog').classList.remove('hidden');});
+document.getElementById('confirmYes').addEventListener('click',beendenConfirm);
+document.getElementById('confirmYes').addEventListener('touchend',e=>{e.preventDefault();beendenConfirm();});
+document.getElementById('confirmNo').addEventListener('click',()=>{document.getElementById('confirmDialog').classList.add('hidden');});
+document.getElementById('confirmNo').addEventListener('touchend',e=>{e.preventDefault();document.getElementById('confirmDialog').classList.add('hidden');});
 
 setupInput();
 
