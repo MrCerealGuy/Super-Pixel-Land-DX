@@ -110,6 +110,14 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
     <button class="btn" id="newGameBtn" style="margin-top:12px">▶ NEUES SPIEL</button>
     <button class="btn" id="continueBtn">▶ WEITERSPIELEN</button>
     <button class="btn btn-help" id="helpBtn">❓ HILFE</button>
+    <div id="newGameConfirm" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(15,56,15,0.92);z-index:5">
+      <p style="color:#9bbc0f;font-size:1em;text-align:center;text-shadow:2px 2px 0 #306230">SPIELSTAND GEHT VERLOREN!</p>
+      <p style="color:#8bac0f;font-size:0.75em;margin-top:4px;text-align:center">Wirklich neu beginnen?</p>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:12px">
+        <button class="btn" id="newGameConfirmYes">JA, NEUES SPIEL</button>
+        <button class="btn btn-no" id="newGameConfirmNo" style="font-size:0.8em;padding:6px 20px">ABBRECHEN</button>
+      </div>
+    </div>
   </div>
   <div id="helpScreen" class="hidden">
     <h1 style="font-size:1.6em">HILFE</h1>
@@ -2485,7 +2493,15 @@ function goFullscreen() {
   if (el.requestFullscreen) el.requestFullscreen();
   else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
 }
+function requestNewGame() {
+  if (localStorage.getItem('splDxSave')) {
+    document.getElementById('newGameConfirm').style.display = 'flex';
+  } else {
+    newGame();
+  }
+}
 function newGame() {
+  document.getElementById('newGameConfirm').style.display = 'none';
   for (const l of levels) l.completed = false;
   cheatUnlockAll = false;
   document.getElementById('unlockAllBtn').textContent = 'ALLE LEVEL FREISCHALTEN: AUS';
@@ -2525,8 +2541,12 @@ function hideHelp() {
 }
 
 loadHighScore();
-document.getElementById('newGameBtn').addEventListener('click',newGame);
-document.getElementById('newGameBtn').addEventListener('touchend',e=>{e.preventDefault();newGame();});
+document.getElementById('newGameBtn').addEventListener('click',requestNewGame);
+document.getElementById('newGameBtn').addEventListener('touchend',e=>{e.preventDefault();requestNewGame();});
+document.getElementById('newGameConfirmYes').addEventListener('click',newGame);
+document.getElementById('newGameConfirmYes').addEventListener('touchend',e=>{e.preventDefault();newGame();});
+document.getElementById('newGameConfirmNo').addEventListener('click',()=>{document.getElementById('newGameConfirm').style.display='none';});
+document.getElementById('newGameConfirmNo').addEventListener('touchend',e=>{e.preventDefault();document.getElementById('newGameConfirm').style.display='none';});
 document.getElementById('continueBtn').addEventListener('click',continueGame);
 document.getElementById('continueBtn').addEventListener('touchend',e=>{e.preventDefault();continueGame();});
 document.getElementById('restartBtn').addEventListener('click',restartFromGameOver);
