@@ -1,6 +1,6 @@
 # Super Pixel Land DX
 
-Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum-System und vollständiger Touch-Steuerung.
+Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum-System, Touch-Steuerung und **Multiplayer** (dedizierter WebSocket-Server).
 
 ## Steuerung
 
@@ -8,7 +8,7 @@ Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum
 | Taste | Aktion |
 |-------|--------|
 | Pfeiltasten ◀ ▶ | Laufen |
-| Pfeiltaste ▲ / Leertaste | Sprung |
+| Pfeiltaste ▲ / Leertaste | Sprung (×2 für Doppelsprung) |
 | Pfeiltaste ▼ | Röhre betreten |
 | Rechte Strg (Strg) | Feuerball (mit Feuer-Powerup) |
 | R | Level neustarten |
@@ -19,7 +19,7 @@ Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum
 | Button | Aktion |
 |--------|--------|
 | ◀ ▶ | Laufen |
-| SPRUNG | Springen |
+| SPRUNG | Springen (×2 für Doppelsprung) |
 | ↓ | Röhre betreten |
 | FEUER | Feuerball (mit Feuer-Powerup) |
 | ↻ | Level neustarten |
@@ -31,6 +31,7 @@ Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum
 - 5 Level: WIESE, HOHLE, HIMMEL, VULKAN, FESTUNG
 - Navigation mit ◀ ▶ auf der Karte, Sprung zum Betreten
 - Nächstes Level erst nach Abschluss des vorherigen freigeschaltet
+- BEENDEN-Button oben rechts (speichern, nur beenden oder abbrechen)
 - Zielfahnenmast am Ende jedes Levels – je höher getroffen, desto mehr Bonus-Punkte (1000–8000)
 
 ### Powerups
@@ -72,20 +73,99 @@ Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum
 - Grüne Röhren, nach Verlassen nicht mehr begehbar
 - Führen in Bonus-Räume
 
+### Doppelsprung
+- Ein zusätzlicher Sprung in der Luft (nach Verlassen des Bodens)
+- Wird an Landepunkten und Checkpoints zurückgesetzt
+- Partikel-Effekt beim Auslösen
+
+## Speichern & Laden
+
+- Automatische Speicherung in `localStorage` (`splDxSave`)
+- Speichert: freigeschaltete Level, Punktestand, Münzen, Leben
+- **NUR BEENDEN**: Spielstand bleibt unberührt
+- **SPEICHERN**: Aktuellen Fortschritt speichern
+- **NEUES SPIEL**: Warnt bei vorhandenem Spielstand, löscht diesen dann
+- Speichern ist deaktiviert, solange Cheats aktiv sind
+
+## Cheats
+
+Über den Cheat-Bildschirm aktivierbar (Button im Startmenü):
+
+- **Alle Level freischalten**: Macht alle 5 Level auf der Karte spielbar
+- Cheats deaktivieren Speichern, bis sie ausgeschaltet werden
+
+## Multiplayer
+
+Gemeinsames Spielen über einen dedizierten Node.js-WebSocket-Server.
+
+### Server starten
+
+```bash
+npm install
+node server.js
+```
+
+Der Server läuft standardmäßig auf Port **8080** (HTTP + WebSocket auf einem Port, änderbar über `PORT`-Umgebungsvariable). Er serviert die Spieldateien (index.html, Favicons) direkt und akzeptiert WebSocket-Verbindungen.
+
+### Spielen
+
+1. Browser öffnen: `http://localhost:8080`
+2. **MULTIPLAYER** auswählen
+3. Eigenen Namen eingeben
+4. Raum erstellen (neuer 4-Zeichen-Code) oder einem bestehenden beitreten
+5. Raum-Code mit Mitspielern teilen
+6. Host startet das Level
+
+### Features
+
+- **Shared World**: Alle Spieler sehen sich gegenseitig, Münzen und Gegner werden synchronisiert
+- **Raum-Verwaltung**: 4-Zeichen-Codes, max. 4 Spieler pro Raum
+- **Host-Übergabe**: Fällt der Host aus, übernimmt der nächste Spieler
+- **Remote Player**: 80% Deckkraft + Namensschild über dem Spieler
+- **Event-Sync**: Geteilte Münzen (`coin_collected`), Gegner-Kills (`enemy_killed`), Block-Aktivierungen (`quest_block_hit`)
+- **Deterministische Level-Genese**: Seeded PRNG (Mulberry32) stellt sicher, dass alle Clients dasselbe Level sehen
+- **State-Übertragung**: 20 fps Spieler-State-Broadcast vom Server
+- **Remote-Zugriff**: Server von außen via Port-Forwarding oder Tunnel erreichbar
+
+### Protokoll-Übersicht
+
+| Richtung | Typ | Beschreibung |
+|----------|-----|-------------|
+| Client → Server | `join` | Raum beitreten/erstellen |
+| Client → Server | `player_state` | Eigene Position/Daten |
+| Client → Server | `game_event` | Aktion (Münze, Gegner, Block, Sieg) |
+| Client → Server | `start_level` | Level starten (nur Host) |
+| Client → Server | `ping` | Verbindung testen |
+| Server → Client | `joined` | Verbunden + Spielerdaten |
+| Server → Client | `player_joined/left` | Spieler beitritt/verlässt |
+| Server → Client | `player_states` | Alle Spieler-Positionen (20 fps) |
+| Server → Client | `game_event` | Aktion eines Mitspielers |
+| Server → Client | `level_start` | Level + Seed für alle |
+| Server → Client | `host_changed` | Host-Übergabe |
+
 ## Technik
 
 - **Canvas**: 160×144 Pixel (GameBoy-Auflösung)
 - **Palette**: 4-Farb-GameBoy-Palette (#9bbc0f, #8bac0f, #306230, #0f380f)
 - **Audio**: Web Audio API (Square-Wave-Oszillatoren)
-- **Keine externen Abhängigkeiten** – reines HTML + CSS + JavaScript
+- **Keine externen Abhängigkeiten** (Client) – reines HTML + CSS + JavaScript
+- **Server**: Node.js mit `ws`-Bibliothek (einzige Abhängigkeit)
 
 ## Ausführen
 
-Mit einem lokalen Server:
+### Singleplayer (lokal)
 
-```
+```bash
 npx serve .
 ```
 
-Oder live auf GitHub Pages:
-https://mrcerealguy.github.io/Super-Pixel-Land-DX/
+Oder live auf GitHub Pages: https://mrcerealguy.github.io/Super-Pixel-Land-DX/
+
+### Multiplayer (mit Server)
+
+```bash
+npm install
+node server.js
+```
+
+Dann `http://localhost:8080` im Browser öffnen. Für Remote-Spieler den Port freigeben (Firewall/Port-Forwarding) und die öffentliche IP verwenden.
