@@ -30,21 +30,21 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
 #rightGroup { display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
 #rightGroup * { pointer-events: auto; }
 #fireBtn { min-width: 90px; font-size: 18px; padding: 10px 6px; background: rgba(160,32,32,0.6); display: none; }
-#startScreen, #gameOverScreen, #helpScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,56,15,0.92); pointer-events: auto; z-index: 10; }
+#startScreen, #singleplayerScreen, #gameOverScreen, #helpScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,56,15,0.92); pointer-events: auto; z-index: 10; }
 #helpScreen h1 { color: #9bbc0f; font-size: 2.2em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 10px; letter-spacing: 4px; }
 #cheatScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,56,15,0.95); pointer-events: auto; z-index: 20; }
 #cheatScreen h1 { color: #9bbc0f; font-size: 2.2em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 10px; letter-spacing: 4px; }
-#startScreen h1, #gameOverScreen h1 { color: #9bbc0f; font-size: 2.2em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 10px; letter-spacing: 4px; }
+#startScreen h1, #singleplayerScreen h1, #gameOverScreen h1 { color: #9bbc0f; font-size: 2.2em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 10px; letter-spacing: 4px; }
 #statusBar { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 8px 12px; pointer-events: none; z-index: 1; }
 #statusBar > div { color: #9bbc0f; font-size: 16px; font-weight: bold; text-shadow: 2px 2px 0 #306230; letter-spacing: 1px; }
 #powerUpBar { position: absolute; top: 30px; left: 12px; color: #8bac0f; font-size: 14px; text-shadow: 1px 1px 0 #306230; }
 #highScoreLabel { color: #8bac0f; font-size: 11px; }
-#startScreen p, #gameOverScreen p { color: #8bac0f; font-size: 1em; margin: 4px 0; text-align: center; }
-#startScreen .btn, #gameOverScreen .btn { pointer-events: auto; margin-top: 20px; background: #306230; color: #9bbc0f; border: 3px solid #9bbc0f; font-size: 1.3em; padding: 12px 36px; border-radius: 8px; font-family: monospace; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent; min-width: 220px; }
-#startScreen .btn:active, #gameOverScreen .btn:active { background: #0f380f; }
-#startScreen .btn-help { margin-top: 30px; font-size: 0.9em; padding: 8px 24px; min-width: 160px; }
-#startScreen .btn:disabled { opacity: 0.35; cursor: default; }
-#startScreen .btn:disabled:active { background: #306230; }
+#startScreen p, #singleplayerScreen p, #gameOverScreen p { color: #8bac0f; font-size: 1em; margin: 4px 0; text-align: center; }
+#startScreen .btn, #singleplayerScreen .btn, #gameOverScreen .btn { pointer-events: auto; margin-top: 20px; background: #306230; color: #9bbc0f; border: 3px solid #9bbc0f; font-size: 1.3em; padding: 12px 36px; border-radius: 8px; font-family: monospace; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent; min-width: 220px; }
+#startScreen .btn:active, #singleplayerScreen .btn:active, #gameOverScreen .btn:active { background: #0f380f; }
+#startScreen .btn-help, #singleplayerScreen .btn-help { margin-top: 30px; font-size: 0.9em; padding: 8px 24px; min-width: 160px; }
+#startScreen .btn:disabled, #singleplayerScreen .btn:disabled { opacity: 0.35; cursor: default; }
+#startScreen .btn:disabled:active, #singleplayerScreen .btn:disabled:active { background: #306230; }
 #mapScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 #mapScreen * { pointer-events: auto; }
 #beendenBtn {
@@ -70,9 +70,32 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
   -webkit-tap-highlight-color: transparent;
 }
 #confirmDialog .btn:active { background: #0f380f; }
-#confirmDialog .btn-no { background: #5c3a1e; border-color: #8bac0f; color: #8bac0f; }
+#confirmDialog .btn-no, #singleplayerScreen .btn-no { background: #5c3a1e; border-color: #8bac0f; color: #8bac0f; }
 #confirmDialog .btn:disabled { opacity: 0.4; cursor: default; }
 #confirmDialog .btn:disabled:active { background: #306230; }
+/* ---- Multiplayer Lobby ---- */
+#mpScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,56,15,0.95); pointer-events: auto; z-index: 20; }
+#mpScreen h1 { color: #9bbc0f; font-size: 1.6em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 8px; letter-spacing: 3px; }
+#mpScreen input { background: #0f380f; border: 2px solid #306230; color: #9bbc0f; font-family: monospace; font-size: 1.1em; padding: 6px 10px; text-align: center; width: 180px; margin: 4px auto; outline: none; border-radius: 4px; }
+#mpScreen input::placeholder { color: #306230; }
+#mpScreen .btn { pointer-events: auto; margin-top: 12px; background: #306230; color: #9bbc0f; border: 3px solid #9bbc0f; font-size: 1em; padding: 8px 24px; border-radius: 8px; font-family: monospace; font-weight: bold; cursor: pointer; min-width: 180px; -webkit-tap-highlight-color: transparent; }
+#mpScreen .btn:active { background: #0f380f; }
+#mpScreen .btn:disabled { opacity: 0.35; cursor: default; }
+#mpScreen .btn:disabled:active { background: #306230; }
+#mpScreen .btn-back, #singleplayerScreen .btn-back { margin-top: 20px; font-size: 0.85em; padding: 6px 16px; min-width: 120px; }
+#mpScreen .btn-secondary { background: #5c3a1e; border-color: #8bac0f; color: #8bac0f; }
+#mpScreen .btn-host { background: #1a4a1a; border-color: #9bbc0f; color: #9bbc0f; }
+#mpError { color: #d04040; font-size: 0.8em; margin: 4px 0; text-align: center; min-height: 1.2em; }
+#mpPlayerList { margin: 8px 0; width: 200px; max-height: 120px; overflow-y: auto; }
+#mpPlayerList div { color: #8bac0f; font-size: 0.9em; text-align: center; padding: 3px 0; }
+#mpPlayerList .mp-host { color: #9bbc0f; font-weight: bold; }
+#mpPlayerList .mp-host::after { content: ' (HOST)'; color: #306230; font-size: 0.8em; }
+#mpLevelSelect { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+#mpLevelSelect button { background: #306230; color: #9bbc0f; border: 2px solid #9bbc0f; font-size: 1em; padding: 4px 12px; border-radius: 6px; font-family: monospace; cursor: pointer; }
+#mpLevelSelect span { color: #9bbc0f; font-size: 1.1em; text-shadow: 2px 2px 0 #306230; min-width: 80px; text-align: center; }
+#mpStatus { position: absolute; bottom: 6px; left: 0; width: 100%; text-align: center; color: #306230; font-size: 0.7em; pointer-events: none; }
+#mpMsgOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(15,56,15,0.8); pointer-events: none; z-index: 15; }
+#mpMsgOverlay div { color: #9bbc0f; font-size: 1.4em; text-align: center; text-shadow: 3px 3px 0 #306230; padding: 20px; }
 .hidden { display: none !important; }
 </style>
 </head>
@@ -107,9 +130,15 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
     <p style="font-size:0.8em;margin-top:12px;color:#306230">Pfeiltasten + Leertaste (Desktop)</p>
     <p style="font-size:0.8em;color:#306230">Touch-Buttons (Mobil) &middot; R = Neustart</p>
     <div id="hsText" style="margin-top:10px;color:#8bac0f;font-size:0.9em"></div>
+    <button class="btn" id="spBtn" style="margin-top:12px">▶ SINGLEPLAYER</button>
+    <button class="btn" id="mpBtn" style="margin-top:8px">» MULTIPLAYER</button>
+    <button class="btn btn-help" id="helpBtn">❓ HILFE</button>
+  </div>
+  <div id="singleplayerScreen" class="hidden">
+    <h1>SINGLEPLAYER</h1>
     <button class="btn" id="newGameBtn" style="margin-top:12px">▶ NEUES SPIEL</button>
     <button class="btn" id="continueBtn">▶ WEITERSPIELEN</button>
-    <button class="btn btn-help" id="helpBtn">❓ HILFE</button>
+    <button class="btn btn-back" id="spBackBtn">← ZURÜCK</button>
     <div id="newGameConfirm" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(15,56,15,0.92);z-index:5">
       <p style="color:#9bbc0f;font-size:1em;text-align:center;text-shadow:2px 2px 0 #306230">SPIELSTAND GEHT VERLOREN!</p>
       <p style="color:#8bac0f;font-size:0.75em;margin-top:4px;text-align:center">Wirklich neu beginnen?</p>
@@ -184,6 +213,30 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
       </div>
     </div>
   </div>
+  <div id="mpScreen" class="hidden">
+    <div id="mpJoin">
+      <h1>MULTIPLAYER</h1>
+      <input id="mpNameInput" maxlength="12" placeholder="DEIN NAME" value="Spieler">
+      <input id="mpCodeInput" maxlength="4" placeholder="RAUM-CODE (LEER = NEU)" style="text-transform:uppercase">
+      <div id="mpError"></div>
+      <button class="btn" id="mpCreateBtn">RAUM ERSTELLEN</button>
+      <button class="btn btn-secondary" id="mpJoinBtn">BEITRETEN</button>
+      <button class="btn btn-back" id="mpBackBtn">← ZURÜCK</button>
+    </div>
+    <div id="mpLobby" style="display:none">
+      <h1>RAUM <span id="mpRoomCode">----</span></h1>
+      <div id="mpPlayerList"></div>
+      <div id="mpLevelSelect">
+        <button id="mpLevelPrev">◀</button>
+        <span id="mpLevelName">WIESE</span>
+        <button id="mpLevelNext">▶</button>
+      </div>
+      <button class="btn btn-host" id="mpStartBtn" style="display:none">LEVEL STARTEN</button>
+      <button class="btn btn-back" id="mpLeaveBtn">VERLASSEN</button>
+    </div>
+    <div id="mpStatus">Nicht verbunden</div>
+  </div>
+  <div id="mpMsgOverlay" class="hidden"><div id="mpMsgText"></div></div>
 </div>
 <script>
 const canvas = document.getElementById('game');
@@ -466,6 +519,26 @@ const levels = [
 ];
 const keys = { left: false, right: false, jump: false, jumpPressed: false, down: false, shoot: false, shootPressed: false };
 
+// ---- Multiplayer ----
+let mpConn = null;
+const mp = {
+  connected: false, id: null, room: null, host: false,
+  seed: null, prng: null, players: {}, localName: '',
+  lobbyLevel: 0, stateSeq: 0
+};
+function mpPRNG(s) {
+  let a = s >>> 0;
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function mpSend(data) { if (mpConn && mpConn.readyState === WebSocket.OPEN) mpConn.send(JSON.stringify(data)); }
+function mpSendEvent(event, data) {
+  if (mp.connected) mpSend({ type: 'game_event', event, data });
+}
 // ---- Player ----
 const player = {
   x: 20, y: 100, w: 10, h: 14, vx: 0, vy: 0,
@@ -542,6 +615,7 @@ function loadProgress() {
 function continueGame() {
   if (!loadProgress()) return;
   document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('singleplayerScreen').classList.add('hidden');
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('helpScreen').classList.add('hidden');
   document.getElementById('cheatScreen').classList.add('hidden');
@@ -555,7 +629,10 @@ function continueGame() {
 }
 
 // ---- Level Building ----
-function rand(min,max){return min+Math.random()*(max-min);}
+function rand(min,max){
+  const r = mp.seed !== null ? mp.prng() : Math.random();
+  return min + r * (max - min);
+}
 function randInt(min,max){return Math.floor(rand(min,max+1));}
 function inGap(x,gaps){for(const g of gaps)if(x>=g[0]&&x<g[1])return true;return false;}
 
@@ -831,6 +908,11 @@ function buildLevel(levelIndex) {
 
   // Add moving platform rects as passable platforms
   for (const mp of movingPlats) platforms.push(mp);
+
+  // Multiplayer object IDs (deterministic: same seed = same IDs across clients)
+  for (let i = 0; i < coins.length; i++) coins[i]._id = 'c' + i;
+  for (let i = 0; i < enemies.length; i++) enemies[i]._id = 'e' + i;
+  for (let i = 0; i < questBlocks.length; i++) questBlocks[i]._id = 'q' + i;
 }
 
 function addPlats(arr) {
@@ -999,6 +1081,7 @@ function resetGame() {
 }
 
 function restartGame() {
+  if (mp.connected) return;
   if (gameScreen === 'map') { newGame(); return; }
   if (!gameRunning) { newGame(); return; }
   resetGame();
@@ -1009,23 +1092,32 @@ function returnToMap() {
   keys.jumpPressed=false; keys.jump=false;
   keys.shootPressed=false; keys.shoot=false;
   keys.left=false; keys.right=false; keys.down=false;
-  gameScreen = 'map';
-  gameRunning = true;
   gameOver = false;
   inBonusRoom = false; bonusRoomPipe = null; bonusCoins = []; bonusBlocks = []; bonusExitCooldown = 0;
   document.getElementById('restartTouchBtn').style.display='none';
   document.getElementById('mapTouchBtn').style.display='none';
   document.getElementById('enterBtn').style.display='none';
+  document.getElementById('fireBtn').style.display='none';
   document.getElementById('controls').style.display='flex';
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('confirmDialog').classList.add('hidden');
+  if (mp.connected) {
+    gameScreen = 'mpLobby'; gameRunning = true;
+    document.getElementById('mapScreen').classList.add('hidden');
+    document.getElementById('mpScreen').classList.remove('hidden');
+    document.getElementById('mpLobby').style.display = '';
+    document.getElementById('mpJoin').style.display = 'none';
+    updateMpPlayerList();
+    return;
+  }
+  gameScreen = 'map'; gameRunning = true;
   document.getElementById('mapScreen').classList.remove('hidden');
 }
 
 // ---- Update ----
 function update() {
-  if (!gameRunning || gameOver) return;
+  if (!gameRunning || gameOver || gameScreen === 'mpLobby') return;
 
   // ---- Map Screen ----
   if (gameScreen === 'map') {
@@ -1359,6 +1451,7 @@ function update() {
     if (rectCollide(pR,cR)) {
       c.collected=true; coinCount++; score+=50;
       sfxCoin(); spawnParticles(c.x+3,c.y+4,4,COL.star); checkExtraLife(p.x+5,p.y+7);
+      if (mp.connected && c._id) mpSendEvent('coin_collected', {id: c._id});
     }
   }
 
@@ -1438,8 +1531,9 @@ function update() {
     if (rectCollide(pR,eR)) {
       if (p.star>0) {
         e.alive=false; score+=300; sfxStomp(); onEnemyKill();
-        if (killstreakTimer>0) score += 300; // doubled
+        if (killstreakTimer>0) score += 300;
         spawnParticles(e.x+e.w/2,eY+e.h/2,10,COL.star);
+        if (mp.connected && e._id) mpSendEvent('enemy_killed', {id: e._id});
         continue;
       }
       const stompThreshold = (e.type==='big') ? 10 : 8;
@@ -1447,9 +1541,10 @@ function update() {
         e.hp--;
         if (e.hp<=0) {
           e.alive=false; score+=200*(1+comboCount); comboCount++; comboTimer=60; onEnemyKill();
-          if (killstreakTimer>0) score += 200*(1+comboCount-1); // doubled
+          if (killstreakTimer>0) score += 200*(1+comboCount-1);
           p.vy=-5; sfxStomp();
           spawnParticles(e.x+e.w/2,eY+e.h/2,10,COL.grass);
+          if (mp.connected && e._id) mpSendEvent('enemy_killed', {id: e._id});
         } else {
           p.vy=-5; sfxStomp();
           e.vx*=1.5; // angry!
@@ -1502,9 +1597,10 @@ function update() {
       if (rectCollide(fbR, { x: e.x, y: eY, w: e.w, h: e.h })) {
         e.alive = false;
         score += 200; onEnemyKill();
-        if (killstreakTimer > 0) score += 200; // doubled
+        if (killstreakTimer > 0) score += 200;
         sfxStomp();
         spawnParticles(e.x + e.w / 2, eY + e.h / 2, 10, COL.lava);
+        if (mp.connected && e._id) mpSendEvent('enemy_killed', {id: e._id});
         fireballs.splice(i, 1);
         break;
       }
@@ -1555,6 +1651,21 @@ function update() {
   document.getElementById('livesDisplay').textContent=ls;
   for (let i=powerUpPopups.length-1; i>=0; i--) { powerUpPopups[i].timer--; if (powerUpPopups[i].timer<=0) powerUpPopups.splice(i,1); }
   if (killstreakPopup>0) killstreakPopup--;
+
+  // Send player state to server (every other frame)
+  if (mp.connected && gameScreen === 'playing' && !inBonusRoom && animTick % 2 === 0) {
+    mpSend({
+      type: 'player_state',
+      x: Math.round(p.x), y: Math.round(p.y),
+      vx: Math.round(p.vx * 10) / 10, vy: Math.round(p.vy * 10) / 10,
+      facing: p.facing, frame: p.frame,
+      onGround: p.onGround, big: p.big,
+      star: p.star, shoot: p.shoot,
+      dead: p.dead, won: p.won,
+      canDoubleJump: p.canDoubleJump,
+      invTimer: p.invTimer
+    });
+  }
 }
 
 function spawnPowerUp(x,y,type) {
@@ -1617,14 +1728,17 @@ function playerWins(bonus) {
     keys.jumpPressed=false; keys.jump=false;
     keys.shootPressed=false; keys.shoot=false;
     keys.left=false; keys.right=false; keys.down=false;
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    if (mp.connected) { returnToMap(); return; }
     gameScreen = 'map';
     gameRunning = true;
     gameOver = false;
-    document.getElementById('gameOverScreen').classList.add('hidden');
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('confirmDialog').classList.add('hidden');
     document.getElementById('mapScreen').classList.remove('hidden');
   }, 1500);
+  // Notify other players
+  if (mp.connected) mpSendEvent('player_won', {});
 }
 
 function checkExtraLife(px, py) {
@@ -2228,6 +2342,7 @@ function draw() {
 
   // ---- Map Screen ----
   if (gameScreen === 'map') { drawMap(); ctx.restore(); return; }
+  if (gameScreen === 'mpLobby') { ctx.restore(); return; }
 
   if (screenShake>0.5/2) ctx.translate(Math.random()*screenShake-screenShake/2, Math.random()*screenShake-screenShake/2);
 
@@ -2353,6 +2468,21 @@ function draw() {
 
   // Player
   if (!player.dead) drawPlayer(player.x-cx, player.y, player.facing, player.frame, player.onGround, player.big, player.star);
+  // Remote players (multiplayer)
+  if (mp.connected) {
+    for (const pid in mp.players) {
+      const rp = mp.players[pid];
+      if (!rp || rp.dead || rp.x == null) continue;
+      ctx.globalAlpha = 0.8;
+      drawPlayer(rp.x - cx, rp.y, rp.facing || 1, rp.frame || 0, rp.onGround, rp.big || false, rp.star || 0);
+      ctx.globalAlpha = 1;
+      if (rp.name) {
+        ctx.globalAlpha = 0.6;
+        drawPixelText(rp.name.substring(0, 8), Math.round(rp.x - cx - rp.name.length * 2.5 + 6), Math.round(rp.y - 10), COL.skyLight);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
 
   // Power-up popups
   for (const pop of powerUpPopups) {
@@ -2451,6 +2581,181 @@ function drawPixelChar(ch,x,y,color){
 }
 function drawPixelText(t,x,y,color){for(let i=0;i<t.length;i++)drawPixelChar(t[i],x+i*6,y,color);}
 
+// ---- Multiplayer Connection & Logic ----
+function mpConnect(name, roomCode) {
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = location.host || 'localhost:8080';
+  const url = protocol + '//' + host;
+  if (mpConn) { try { mpConn.close(); } catch(e) {} }
+  mp.players = {};
+  document.getElementById('mpError').textContent = 'Verbinde...';
+  try {
+    mpConn = new WebSocket(url);
+  } catch(e) {
+    document.getElementById('mpError').textContent = 'Verbindung fehlgeschlagen!';
+    return;
+  }
+  mpConn.onopen = () => {
+    document.getElementById('mpError').textContent = '';
+    mpSend({ type: 'join', name, room: roomCode || undefined });
+  };
+  mpConn.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch(e) { return; }
+    mpHandleMessage(msg);
+  };
+  mpConn.onclose = () => {
+    if (mp.connected) mpDisconnect('Verbindung getrennt');
+    else document.getElementById('mpError').textContent = 'Server nicht erreichbar';
+  };
+  mpConn.onerror = () => {
+    document.getElementById('mpError').textContent = 'Verbindungsfehler';
+  };
+}
+function mpDisconnect(reason) {
+  mp.connected = false; mp.room = null; mp.id = null; mp.host = false;
+  mp.seed = null; mp.players = {};
+  if (mpConn) { try { mpConn.close(); } catch(e) {} mpConn = null; }
+  document.getElementById('mpScreen').classList.add('hidden');
+  document.getElementById('mpMsgOverlay').classList.add('hidden');
+  document.getElementById('mpJoin').style.display = '';
+  document.getElementById('mpLobby').style.display = 'none';
+  document.getElementById('mpStatus').textContent = reason || 'Getrennt';
+  if (gameScreen === 'playing' || gameScreen === 'mpLobby') {
+    gameScreen = 'start'; gameRunning = false;
+    document.getElementById('startScreen').classList.remove('hidden');
+  }
+}
+function mpStartLevel(level, seed) {
+  mp.seed = seed;
+  mp.prng = mpPRNG(seed);
+  // Override Math.random globally so all direct calls inside buildLevel use the seeded PRNG
+  const _origRandom = Math.random;
+  Math.random = function() { return mp.prng(); };
+  stopStarMusic(); stopKillstreakMusic();
+  score = 0; coinCount = 0; distance = 0; camera.x = 0;
+  gameOver = false; screenShake = 0; gameRunning = true;
+  comboCount = 0; comboTimer = 0;
+  killstreakCount = 0; killstreakWindow = 0; killstreakTimer = 0; killstreakPopup = 0;
+  lastEnemySpawnX = 0; inBonusRoom = false; bonusRoomPipe = null;
+  bonusCoins = []; bonusBlocks = []; bonusExitCooldown = 0;
+  fireballs = []; powerUpPopups = [];
+  currentLevel = level;
+  buildLevel(level);
+  Math.random = _origRandom;
+  mp.seed = null;
+  resetPlayer();
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('mapScreen').classList.add('hidden');
+  document.getElementById('mpScreen').classList.add('hidden');
+  document.getElementById('mpMsgOverlay').classList.add('hidden');
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('rightGroup').style.display = '';
+  document.getElementById('enterBtn').style.display = '';
+  document.getElementById('fireBtn').style.display = '';
+  document.getElementById('restartTouchBtn').style.display = '';
+  document.getElementById('mapTouchBtn').style.display = '';
+  document.getElementById('statusBar').style.display = '';
+  document.getElementById('powerUpBar').style.display = '';
+  gameScreen = 'playing';
+}
+function mpHandleMessage(msg) {
+  switch (msg.type) {
+    case 'joined':
+      mp.connected = true; mp.id = msg.id; mp.room = msg.room; mp.host = msg.host;
+      mp.players = {};
+      for (const p of msg.players) {
+        if (p.id !== mp.id) mp.players[p.id] = { id: p.id, name: p.name, host: p.host };
+      }
+      document.getElementById('mpRoomCode').textContent = msg.room;
+      document.getElementById('mpJoin').style.display = 'none';
+      document.getElementById('mpLobby').style.display = '';
+      document.getElementById('mpStartBtn').style.display = msg.host ? 'inline-block' : 'none';
+      document.getElementById('mpStatus').textContent = 'Verbunden – Raum ' + msg.room;
+      updateMpPlayerList();
+      break;
+    case 'player_joined':
+      mp.players[msg.id] = { id: msg.id, name: msg.name, host: false };
+      updateMpPlayerList();
+      break;
+    case 'player_left':
+      delete mp.players[msg.id];
+      updateMpPlayerList();
+      break;
+    case 'host_changed':
+      mp.host = (msg.id === mp.id);
+      document.getElementById('mpStartBtn').style.display = mp.host ? 'inline-block' : 'none';
+      for (const pid in mp.players) mp.players[pid].host = (pid === msg.id);
+      updateMpPlayerList();
+      break;
+    case 'player_states':
+      if (gameScreen !== 'playing') break;
+      for (const ps of msg.players) {
+        if (ps.id === mp.id) continue;
+        mp.players[ps.id] = mp.players[ps.id] || {};
+        Object.assign(mp.players[ps.id], ps);
+      }
+      break;
+    case 'game_event':
+      if (gameScreen !== 'playing') break;
+      if (msg.id === mp.id) break;
+      mpHandleEvent(msg.event, msg.data);
+      break;
+    case 'level_start':
+      mpStartLevel(msg.level, msg.seed);
+      break;
+    case 'error':
+      document.getElementById('mpError').textContent = msg.message;
+      break;
+    case 'pong':
+      break;
+  }
+}
+function mpHandleEvent(event, data) {
+  switch (event) {
+    case 'coin_collected':
+      for (const c of coins) {
+        if (c._id === data.id && !c.collected) {
+          c.collected = true;
+          spawnParticles(c.x + 3, c.y + 4, 4, COL.star);
+          break;
+        }
+      }
+      break;
+    case 'enemy_killed':
+      for (const e of enemies) {
+        if (e._id === data.id && e.alive) {
+          e.alive = false;
+          spawnParticles(e.x + e.w / 2, e.y + e.h / 2, 10, COL.grass);
+          break;
+        }
+      }
+      break;
+    case 'player_won':
+      document.getElementById('mpMsgText').textContent = 'SPIELER HAT GEWONNEN!';
+      document.getElementById('mpMsgOverlay').classList.remove('hidden');
+      setTimeout(() => { document.getElementById('mpMsgOverlay').classList.add('hidden'); }, 3000);
+      break;
+  }
+}
+function updateMpPlayerList() {
+  const list = document.getElementById('mpPlayerList');
+  list.innerHTML = '';
+  if (mp.connected) {
+    const me = document.createElement('div');
+    me.textContent = mp.localName + ' (DU)';
+    me.style.color = '#9bbc0f';
+    list.appendChild(me);
+  }
+  for (const pid in mp.players) {
+    const p = mp.players[pid];
+    const div = document.createElement('div');
+    div.textContent = p.name || 'Spieler';
+    if (p.host) div.className = 'mp-host';
+    list.appendChild(div);
+  }
+}
 // ---- Input ----
 function setupInput() {
   function bindBtn(el,key) {
@@ -2506,6 +2811,7 @@ function newGame() {
   cheatUnlockAll = false;
   document.getElementById('unlockAllBtn').textContent = 'ALLE LEVEL FREISCHALTEN: AUS';
   document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('singleplayerScreen').classList.add('hidden');
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('helpScreen').classList.add('hidden');
   document.getElementById('cheatScreen').classList.add('hidden');
@@ -2523,6 +2829,7 @@ function updateContinueBtn() {
 }
 function restartFromGameOver() {
   document.getElementById('gameOverScreen').classList.add('hidden');
+  if (mp.connected) { returnToMap(); return; }
   document.getElementById('startScreen').classList.remove('hidden');
   document.getElementById('mapScreen').classList.add('hidden');
   document.getElementById('confirmDialog').classList.add('hidden');
@@ -2569,6 +2876,105 @@ document.getElementById('immortalBtn').addEventListener('click',()=>{cheatImmort
 document.getElementById('immortalBtn').addEventListener('touchend',e=>{e.preventDefault();cheatImmortal=!cheatImmortal;document.getElementById('immortalBtn').textContent='UNSTERBLICH: '+(cheatImmortal?'EIN':'AUS');});
 document.getElementById('unlockAllBtn').addEventListener('click',()=>{cheatUnlockAll=!cheatUnlockAll;if(cheatUnlockAll)for(const l of levels)l.completed=true;document.getElementById('unlockAllBtn').textContent='ALLE LEVEL FREISCHALTEN: '+(cheatUnlockAll?'EIN':'AUS');});
 document.getElementById('unlockAllBtn').addEventListener('touchend',e=>{e.preventDefault();cheatUnlockAll=!cheatUnlockAll;if(cheatUnlockAll)for(const l of levels)l.completed=true;document.getElementById('unlockAllBtn').textContent='ALLE LEVEL FREISCHALTEN: '+(cheatUnlockAll?'EIN':'AUS');});
+
+// ---- Singleplayer Screen ----
+document.getElementById('spBtn').addEventListener('click', ()=>{
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('singleplayerScreen').classList.remove('hidden');
+});
+document.getElementById('spBtn').addEventListener('touchend', e=>{e.preventDefault();
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('singleplayerScreen').classList.remove('hidden');
+});
+document.getElementById('spBackBtn').addEventListener('click', ()=>{
+  document.getElementById('singleplayerScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
+document.getElementById('spBackBtn').addEventListener('touchend', e=>{e.preventDefault();
+  document.getElementById('singleplayerScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
+// ---- Multiplayer UI ----
+document.getElementById('mpBtn').addEventListener('click', ()=>{
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('mpScreen').classList.remove('hidden');
+  document.getElementById('mpJoin').style.display = '';
+  document.getElementById('mpLobby').style.display = 'none';
+  document.getElementById('mpError').textContent = '';
+});
+document.getElementById('mpBtn').addEventListener('touchend', e=>{e.preventDefault();
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('mpScreen').classList.remove('hidden');
+  document.getElementById('mpJoin').style.display = '';
+  document.getElementById('mpLobby').style.display = 'none';
+  document.getElementById('mpError').textContent = '';
+});
+document.getElementById('mpBackBtn').addEventListener('click', ()=>{
+  if (mpConn) { try { mpConn.close(); } catch(e) {} mpConn = null; }
+  mp.connected = false; mp.players = {};
+  document.getElementById('mpScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
+document.getElementById('mpBackBtn').addEventListener('touchend', e=>{e.preventDefault();
+  if (mpConn) { try { mpConn.close(); } catch(e) {} mpConn = null; }
+  mp.connected = false; mp.players = {};
+  document.getElementById('mpScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
+document.getElementById('mpCreateBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('mpNameInput').value.trim() || 'Spieler';
+  mp.localName = name;
+  mpConnect(name, '');
+});
+document.getElementById('mpCreateBtn').addEventListener('touchend', e=>{e.preventDefault();
+  const name = document.getElementById('mpNameInput').value.trim() || 'Spieler';
+  mp.localName = name;
+  mpConnect(name, '');
+});
+document.getElementById('mpJoinBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('mpNameInput').value.trim() || 'Spieler';
+  const code = document.getElementById('mpCodeInput').value.trim().toUpperCase();
+  if (!code) { document.getElementById('mpError').textContent = 'Raum-Code eingeben!'; return; }
+  mp.localName = name;
+  mpConnect(name, code);
+});
+document.getElementById('mpJoinBtn').addEventListener('touchend', e=>{e.preventDefault();
+  const name = document.getElementById('mpNameInput').value.trim() || 'Spieler';
+  const code = document.getElementById('mpCodeInput').value.trim().toUpperCase();
+  if (!code) { document.getElementById('mpError').textContent = 'Raum-Code eingeben!'; return; }
+  mp.localName = name;
+  mpConnect(name, code);
+});
+document.getElementById('mpLeaveBtn').addEventListener('click', ()=>{
+  mpDisconnect('Raum verlassen');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
+document.getElementById('mpLeaveBtn').addEventListener('touchend', e=>{e.preventDefault();
+  mpDisconnect('Raum verlassen');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
+document.getElementById('mpStartBtn').addEventListener('click', ()=>{
+  if (mp.host && mp.connected) mpSend({ type: 'start_level', level: mp.lobbyLevel });
+});
+document.getElementById('mpStartBtn').addEventListener('touchend', e=>{e.preventDefault();
+  if (mp.host && mp.connected) mpSend({ type: 'start_level', level: mp.lobbyLevel });
+});
+document.getElementById('mpLevelPrev').addEventListener('click', ()=>{
+  mp.lobbyLevel = (mp.lobbyLevel - 1 + levels.length) % levels.length;
+  document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+});
+document.getElementById('mpLevelPrev').addEventListener('touchend', e=>{e.preventDefault();
+  mp.lobbyLevel = (mp.lobbyLevel - 1 + levels.length) % levels.length;
+  document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+});
+document.getElementById('mpLevelNext').addEventListener('click', ()=>{
+  mp.lobbyLevel = (mp.lobbyLevel + 1) % levels.length;
+  document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+});
+document.getElementById('mpLevelNext').addEventListener('touchend', e=>{e.preventDefault();
+  mp.lobbyLevel = (mp.lobbyLevel + 1) % levels.length;
+  document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+});
 
 function beendenSave() {
   if (!cheatInfiniteLives && !cheatImmortal && !cheatUnlockAll) saveProgress();
