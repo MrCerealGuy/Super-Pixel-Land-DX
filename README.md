@@ -169,3 +169,13 @@ node server.js
 ```
 
 Dann `http://localhost:8080` im Browser öffnen. Für Remote-Spieler den Port freigeben (Firewall/Port-Forwarding) und die öffentliche IP verwenden.
+
+### Öffentlicher Server (Render)
+
+Das Spiel läuft dauerhaft auf **Render**:
+
+```
+https://super-pixel-land-dx.onrender.com
+```
+
+Einfach die URL im Browser öffnen – kein eigener Server nötig. WebSocket und HTTP laufen auf demselben Port. Hinweis: Der Render Free-Tier schaltet nach 15 Min Inaktivität ab (erster Aufruf nach Pause dauert ~30s).
