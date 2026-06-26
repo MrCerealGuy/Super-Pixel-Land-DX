@@ -10,7 +10,7 @@ const MIME = {
   '.png':'image/png','.ico':'image/x-icon','.svg':'image/svg+xml','.json':'application/json',
 };
 const server = http.createServer((req, res) => {
-  let filePath = req.url === '/' ? '/index.html' : req.url;
+  let filePath = req.url === '/' ? 'index.html' : req.url.replace(/^\//, '');
   filePath = path.normalize(path.join(__dirname, filePath)).replace(/^\.\.\//, '');
   if (!filePath.startsWith(__dirname)) { res.writeHead(403); res.end(); return; }
   const ext = path.extname(filePath);
