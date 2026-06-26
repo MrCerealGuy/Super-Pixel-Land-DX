@@ -1,0 +1,90 @@
+﻿* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-touch-callout: none; -webkit-user-select: none; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden; background: #0f380f;
+  font-family: monospace; touch-action: none;
+}
+canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%; height: 100%; }
+#ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#controls { position: absolute; bottom: 10px; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 10px; pointer-events: none; }
+#controls button { pointer-events: auto; font-size: 28px; padding: 12px 20px; border: 3px solid #306230; border-radius: 12px; background: rgba(48,98,48,0.7); color: #9bbc0f; font-family: monospace; font-weight: bold; min-width: 64px; touch-action: none; -webkit-tap-highlight-color: transparent; }
+#controls button:active { background: #306230; }
+#leftGroup { display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+#leftGroup * { pointer-events: auto; }
+#dpad { display: flex; gap: 6px; }
+#dpad button { min-width: 70px; font-size: 30px; padding: 14px 10px; }
+#jumpBtn { min-width: 90px; font-size: 24px; padding: 14px 10px; background: rgba(48,98,48,0.85); }
+#restartTouchBtn { min-width: 54px; font-size: 22px; padding: 10px 8px; background: rgba(160,32,32,0.5); }
+#mapTouchBtn { min-width: 54px; font-size: 16px; padding: 6px 4px; background: rgba(32,80,160,0.5); }
+#topBtns { position: absolute; top: 52px; right: 12px; display: flex; gap: 4px; pointer-events: none; z-index: 1; }
+#topBtns * { pointer-events: auto; }
+#enterBtn { min-width: 44px; font-size: 20px; padding: 8px 6px; background: rgba(48,98,48,0.5); display: none; }
+#rightGroup { display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
+#rightGroup * { pointer-events: auto; }
+#fireBtn { min-width: 90px; font-size: 18px; padding: 10px 6px; background: rgba(160,32,32,0.6); display: none; }
+#startScreen, #singleplayerScreen, #gameOverScreen, #helpScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,56,15,0.92); pointer-events: auto; z-index: 10; }
+#helpScreen h1 { color: #9bbc0f; font-size: 2.2em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 10px; letter-spacing: 4px; }
+#cheatScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,56,15,0.95); pointer-events: auto; z-index: 20; }
+#cheatScreen h1 { color: #9bbc0f; font-size: 2.2em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 10px; letter-spacing: 4px; }
+#startScreen h1, #singleplayerScreen h1, #gameOverScreen h1 { color: #9bbc0f; font-size: 2.2em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 10px; letter-spacing: 4px; }
+#statusBar { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 8px 12px; pointer-events: none; z-index: 1; }
+#statusBar > div { color: #9bbc0f; font-size: 16px; font-weight: bold; text-shadow: 2px 2px 0 #306230; letter-spacing: 1px; }
+#powerUpBar { position: absolute; top: 30px; left: 12px; color: #8bac0f; font-size: 14px; text-shadow: 1px 1px 0 #306230; }
+#highScoreLabel { color: #8bac0f; font-size: 11px; }
+#startScreen p, #singleplayerScreen p, #gameOverScreen p { color: #8bac0f; font-size: 1em; margin: 4px 0; text-align: center; }
+#startScreen .btn, #singleplayerScreen .btn, #gameOverScreen .btn { pointer-events: auto; margin-top: 20px; background: #306230; color: #9bbc0f; border: 3px solid #9bbc0f; font-size: 1.3em; padding: 12px 36px; border-radius: 8px; font-family: monospace; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent; min-width: 220px; }
+#startScreen .btn:active, #singleplayerScreen .btn:active, #gameOverScreen .btn:active { background: #0f380f; }
+#startScreen .btn-help, #singleplayerScreen .btn-help { margin-top: 30px; font-size: 0.9em; padding: 8px 24px; min-width: 160px; }
+#startScreen .btn:disabled, #singleplayerScreen .btn:disabled { opacity: 0.35; cursor: default; }
+#startScreen .btn:disabled:active, #singleplayerScreen .btn:disabled:active { background: #306230; }
+#mapScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+#mapScreen * { pointer-events: auto; }
+#beendenBtn {
+  position: absolute; top: 10px; right: 10px;
+  background: #5c3a1e; color: #9bbc0f;
+  border: 3px solid #9bbc0f; font-size: 1.0em;
+  padding: 6px 16px; border-radius: 8px;
+  font-family: monospace; font-weight: bold; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#beendenBtn:active { background: #3a2a10; }
+#confirmDialog {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(15,56,15,0.92); pointer-events: auto; z-index: 20;
+}
+#confirmDialog p { color: #9bbc0f; font-size: 1.2em; margin: 8px 0; text-align: center; text-shadow: 2px 2px 0 #306230; }
+#confirmDialog .btn {
+  margin-top: 16px; background: #306230; color: #9bbc0f;
+  border: 3px solid #9bbc0f; font-size: 1.2em;
+  padding: 8px 28px; border-radius: 8px;
+  font-family: monospace; font-weight: bold; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#confirmDialog .btn:active { background: #0f380f; }
+#confirmDialog .btn-no, #singleplayerScreen .btn-no { background: #5c3a1e; border-color: #8bac0f; color: #8bac0f; }
+#confirmDialog .btn:disabled { opacity: 0.4; cursor: default; }
+#confirmDialog .btn:disabled:active { background: #306230; }
+/* ---- Multiplayer Lobby ---- */
+#mpScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15,56,15,0.95); pointer-events: auto; z-index: 20; }
+#mpScreen h1 { color: #9bbc0f; font-size: 1.6em; text-align: center; text-shadow: 3px 3px 0 #306230; margin-bottom: 8px; letter-spacing: 3px; }
+#mpScreen input { background: #0f380f; border: 2px solid #306230; color: #9bbc0f; font-family: monospace; font-size: 1.1em; padding: 6px 10px; text-align: center; width: 180px; margin: 4px auto; outline: none; border-radius: 4px; }
+#mpScreen input::placeholder { color: #306230; }
+#mpScreen .btn { pointer-events: auto; margin-top: 12px; background: #306230; color: #9bbc0f; border: 3px solid #9bbc0f; font-size: 1em; padding: 8px 24px; border-radius: 8px; font-family: monospace; font-weight: bold; cursor: pointer; min-width: 180px; -webkit-tap-highlight-color: transparent; }
+#mpScreen .btn:active { background: #0f380f; }
+#mpScreen .btn:disabled { opacity: 0.35; cursor: default; }
+#mpScreen .btn:disabled:active { background: #306230; }
+#mpScreen .btn-back, #singleplayerScreen .btn-back { margin-top: 20px; font-size: 0.85em; padding: 6px 16px; min-width: 120px; }
+#mpScreen .btn-secondary { background: #5c3a1e; border-color: #8bac0f; color: #8bac0f; }
+#mpScreen .btn-host { background: #1a4a1a; border-color: #9bbc0f; color: #9bbc0f; }
+#mpError { color: #d04040; font-size: 0.8em; margin: 4px 0; text-align: center; min-height: 1.2em; }
+#mpPlayerList { margin: 8px 0; width: 200px; max-height: 120px; overflow-y: auto; }
+#mpPlayerList div { color: #8bac0f; font-size: 0.9em; text-align: center; padding: 3px 0; }
+#mpPlayerList .mp-host { color: #9bbc0f; font-weight: bold; }
+#mpPlayerList .mp-host::after { content: ' (HOST)'; color: #306230; font-size: 0.8em; }
+#mpLevelSelect { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+#mpLevelSelect button { background: #306230; color: #9bbc0f; border: 2px solid #9bbc0f; font-size: 1em; padding: 4px 12px; border-radius: 6px; font-family: monospace; cursor: pointer; }
+#mpLevelSelect span { color: #9bbc0f; font-size: 1.1em; text-shadow: 2px 2px 0 #306230; min-width: 80px; text-align: center; }
+#mpStatus { position: absolute; bottom: 6px; left: 0; width: 100%; text-align: center; color: #306230; font-size: 0.7em; pointer-events: none; }
+#mpMsgOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(15,56,15,0.8); pointer-events: none; z-index: 15; }
+#mpMsgOverlay div { color: #9bbc0f; font-size: 1.4em; text-align: center; text-shadow: 3px 3px 0 #306230; padding: 20px; }
+.hidden { display: none !important; }
