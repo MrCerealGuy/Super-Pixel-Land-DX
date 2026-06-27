@@ -692,6 +692,14 @@ function buildLevel(levelIndex) {
     }
   }
 
+  // Rare 10-hit coin blocks
+  for (const qb of questBlocks) {
+    if (qb.contents === 'coin' && Math.random() < 0.12) {
+      qb.maxHits = 10;
+      qb.hitCount = 0;
+    }
+  }
+
   // Multiplayer object IDs (deterministic: same seed = same IDs across clients)
   for (let i = 0; i < coins.length; i++) coins[i]._id = 'c' + i;
   for (let i = 0; i < enemies.length; i++) enemies[i]._id = 'e' + i;
@@ -1189,7 +1197,13 @@ function update() {
     const qr={x:qb.x,y:qb.y,w:qb.w,h:qb.h};
     if (!rectCollide(pRect2,qr)||p.vy>=0) continue;
     if (p.y > qb.y + qb.h - 16 && p.y < qb.y + qb.h + 6) {
-      qb.hit=true; qb.bounce=4; sfxBlock();
+      qb.bounce=4; sfxBlock();
+      if (qb.maxHits) {
+        qb.hitCount = (qb.hitCount || 0) + 1;
+        if (qb.hitCount >= qb.maxHits) qb.hit = true;
+      } else {
+        qb.hit = true;
+      }
       if (qb.contents==='coin'){coinCount++;score+=100;spawnParticles(qb.x+6,qb.y,6,COL.star);checkExtraLife(qb.x+6,qb.y);if(mp.connected&&qb._id)mpSendEvent('quest_block_hit',{id:qb._id,contents:'coin'});}
       else if (qb.contents==='power'){
         const puType=!p.big?'mushroom':'fire';spawnPowerUp(qb.x+2,qb.y-14,puType,mp.connected?'p_'+qb._id:undefined);
@@ -2708,7 +2722,13 @@ function mpHandleEvent(event, data) {
     case 'quest_block_hit':
       for (const qb of questBlocks) {
         if (qb._id === data.id && !qb.hit) {
-          qb.hit = true; qb.bounce = 4;
+          if (qb.maxHits) {
+            qb.hitCount = (qb.hitCount || 0) + 1;
+            if (qb.hitCount >= qb.maxHits) qb.hit = true;
+          } else {
+            qb.hit = true;
+          }
+          qb.bounce = 4;
           if (data.powerupType) spawnPowerUp(qb.x + 2, qb.y - 14, data.powerupType, 'p_' + qb._id);
           break;
         }
