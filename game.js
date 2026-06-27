@@ -919,7 +919,8 @@ function showMpResult(name, score, coins, distance) {
 function update() {
   if (countdown > 0) {
     countdown--;
-    if (countdown === 0) mpStartLevel(pendingLevel, pendingSeed);
+    if (countdown === 120 || countdown === 60) sfxBlock();
+    if (countdown === 0) { sfxPowerUp(); mpStartLevel(pendingLevel, pendingSeed); }
     return;
   }
   if (!gameRunning || gameOver || gameScreen === 'mpLobby') return;
@@ -2624,6 +2625,7 @@ function mpHandleMessage(msg) {
     case 'level_start':
       if (countdown > 0 || gameScreen === 'playing') break;
       countdown = 180;
+      sfxBlock();
       pendingLevel = msg.level;
       pendingSeed = msg.seed;
       stopStarMusic();
