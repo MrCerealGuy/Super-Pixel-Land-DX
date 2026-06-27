@@ -2764,6 +2764,8 @@ function updateMpPlayerList() {
     if (p.host) div.className = 'mp-host';
     list.appendChild(div);
   }
+  document.getElementById('mpLevelPrev').disabled = !mp.host;
+  document.getElementById('mpLevelNext').disabled = !mp.host;
 }
 // ---- Input ----
 function setupInput() {
