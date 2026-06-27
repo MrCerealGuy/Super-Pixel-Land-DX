@@ -694,6 +694,7 @@ function buildLevel(levelIndex) {
   for (let i = 0; i < coins.length; i++) coins[i]._id = 'c' + i;
   for (let i = 0; i < enemies.length; i++) enemies[i]._id = 'e' + i;
   for (let i = 0; i < questBlocks.length; i++) questBlocks[i]._id = 'q' + i;
+  for (let i = 0; i < checkpoints.length; i++) checkpoints[i]._id = 'cp' + i;
 }
 
 function addPlats(arr) {
@@ -1197,7 +1198,7 @@ function update() {
     if (cp.reached) continue;
     const pR={x:p.x,y:p.y,w:p.w,h:p.h};
     const cR={x:cp.x,y:cp.y,w:cp.w,h:cp.h};
-    if (rectCollide(pR,cR)) { cp.reached=true; sfxCoin(); spawnParticles(cp.x+4,cp.y,6,COL.star); }
+    if (rectCollide(pR,cR)) { cp.reached=true; sfxCoin(); spawnParticles(cp.x+4,cp.y,6,COL.star); if (mp.connected && cp._id) mpSendEvent('checkpoint_reached', {id: cp._id}); }
   }
 
   // ---- Moving Platforms ----
@@ -2558,6 +2559,15 @@ function mpHandleEvent(event, data) {
         if (qb._id === data.id && !qb.hit) {
           qb.hit = true; qb.bounce = 4;
           if (data.powerupType) spawnPowerUp(qb.x + 2, qb.y - 14, data.powerupType, 'p_' + qb._id);
+          break;
+        }
+      }
+      break;
+    case 'checkpoint_reached':
+      for (const cp of checkpoints) {
+        if (cp._id === data.id && !cp.reached) {
+          cp.reached = true;
+          spawnParticles(cp.x + 4, cp.y, 6, COL.star);
           break;
         }
       }
