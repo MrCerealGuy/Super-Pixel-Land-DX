@@ -2269,9 +2269,9 @@ function draw() {
   if (!player.dead) {
     drawPlayer(player.x-cx, player.y, player.facing, player.frame, player.onGround, player.big, player.star);
     if (mp.connected && mp.localName) {
-      const n = mp.localName.substring(0, 10);
+      const n = 'P' + mp.localName.replace(/.*\s(\d+).*/, '$1');
       const tx = Math.round(player.x - cx - n.length * 2.5 + 6);
-      const ty = Math.round(player.y - 16);
+      const ty = Math.round(player.y - 18);
       drawPixelText(n, tx, ty, COL.white);
     }
   }
@@ -2284,9 +2284,9 @@ function draw() {
       drawPlayer(rp.x - cx, rp.y, rp.facing || 1, rp.frame || 0, rp.onGround, rp.big || false, rp.star || 0);
       ctx.globalAlpha = 1;
       if (rp.name) {
-        const n = rp.name.substring(0, 10);
+        const n = 'P' + rp.name.replace(/.*\s(\d+).*/, '$1');
         const tx = Math.round(rp.x - cx - n.length * 2.5 + 6);
-        const ty = Math.round(rp.y - 16);
+        const ty = Math.round(rp.y - 18);
         drawPixelText(n, tx, ty, COL.white);
       }
     }
