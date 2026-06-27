@@ -262,6 +262,8 @@ let questBlocks = [], powerups = [], pipes = [], checkpoints = [], powerUpPopups
 let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0;
 let cheatInfiniteLives = false, cheatImmortal = false, cheatUnlockAll = false;
 let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
+const LEVEL_TIME_LIMIT = 300 * 60;
+let levelTimer = LEVEL_TIME_LIMIT;
 let biome = BIOME.MEADOW, biomeTrans = 0;
 let countdown = 0, pendingLevel = 0, pendingSeed = 0;
 let comboCount = 0, comboTimer = 0;
@@ -867,7 +869,7 @@ function onEnemyKill() {
 function resetGame() {
   stopStarMusic(); stopKillstreakMusic();
   score=0; coinCount=0; distance=0; camera.x=0;
-  gameOver=false; screenShake=0; gameRunning=true;
+  gameOver=false; screenShake=0; gameRunning=true; levelTimer=LEVEL_TIME_LIMIT;
   comboCount=0; comboTimer=0; killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0;
   lastEnemySpawnX=0; inBonusRoom=false; bonusRoomPipe=null; bonusCoins=[]; bonusBlocks=[]; bonusExitCooldown=0;
   fireballs=[];
@@ -1022,6 +1024,19 @@ function update() {
     }
   } else if (starOsc) {
     stopStarMusic();
+  }
+
+  // ---- Level Timer ----
+  if (gameScreen === 'playing' && !gameOver && gameRunning) {
+    if (levelTimer > 0) {
+      levelTimer--;
+      if (levelTimer <= 0 && !player.dead && !player.won) {
+        if (inBonusRoom) exitBonusRoom();
+        die();
+      } else if (levelTimer <= 3000 && levelTimer % 60 === 0) {
+        sfxBlock();
+      }
+    }
   }
 
   // ---- Bonus Room ----
@@ -1484,6 +1499,10 @@ function update() {
   // UI
   document.getElementById('scoreDisplay').textContent=String(score).padStart(6,'0');
   document.getElementById('coinsDisplay').textContent=String(coinCount).padStart(2,'0');
+  const secs = Math.max(0, Math.ceil(levelTimer / 60));
+  const td = document.getElementById('timerDisplay');
+  td.textContent = String(Math.floor(secs / 60)).padStart(2,'0') + ':' + String(secs % 60).padStart(2,'0');
+  td.className = secs <= 60 ? 'low' : '';
   let ls = 'LEBEN '+lives;
   if (p.big) ls+=' BIG';
   if (p.star>0) ls+=' STERN';
@@ -2574,7 +2593,7 @@ function mpStartLevel(level, seed) {
   Math.random = function() { return mp.prng(); };
   stopStarMusic(); stopKillstreakMusic();
   score = 0; coinCount = 0; distance = 0; camera.x = 0;
-  gameOver = false; screenShake = 0; gameRunning = true;
+  gameOver = false; screenShake = 0; gameRunning = true; levelTimer = LEVEL_TIME_LIMIT;
   comboCount = 0; comboTimer = 0;
   killstreakCount = 0; killstreakWindow = 0; killstreakTimer = 0; killstreakPopup = 0;
   lastEnemySpawnX = 0; inBonusRoom = false; bonusRoomPipe = null;
