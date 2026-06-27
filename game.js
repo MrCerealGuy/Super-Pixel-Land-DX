@@ -1170,8 +1170,7 @@ function update() {
     if (qb.hit) continue;
     const qr={x:qb.x,y:qb.y,w:qb.w,h:qb.h};
     if (!rectCollide(pRect2,qr)||p.vy>=0) continue;
-    const foot=p.y+p.h;
-    if (foot>qb.y+qb.h-5&&foot<qb.y+qb.h+5) {
+    if (p.y > qb.y + qb.h - 4 && p.y < qb.y + qb.h + 6) {
       qb.hit=true; qb.bounce=4; sfxBlock();
       if (qb.contents==='coin'){coinCount++;score+=100;spawnParticles(qb.x+6,qb.y,6,COL.star);checkExtraLife(qb.x+6,qb.y);if(mp.connected&&qb._id)mpSendEvent('quest_block_hit',{id:qb._id,contents:'coin'});}
       else if (qb.contents==='power'){
