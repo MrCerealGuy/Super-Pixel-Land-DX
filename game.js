@@ -2636,8 +2636,8 @@ function mpHandleMessage(msg) {
       document.getElementById('mpMsgOverlay').classList.add('hidden');
       document.getElementById('controls').style.display = 'flex';
       document.getElementById('rightGroup').style.display = '';
-      document.getElementById('enterBtn').style.display = '';
-      document.getElementById('fireBtn').style.display = '';
+      document.getElementById('enterBtn').style.display = 'none';
+      document.getElementById('fireBtn').style.display = 'none';
       document.getElementById('mapTouchBtn').style.display = 'none';
       document.getElementById('restartTouchBtn').style.display = 'none';
       document.getElementById('statusBar').style.display = '';
