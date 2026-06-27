@@ -3139,6 +3139,7 @@ resize();
 loadHighScore();
 document.getElementById('hsText').textContent = highScore > 0 ? 'HIGHSCORE: '+highScore : '';
 updateContinueBtn();
+document.getElementById('buildVersion').textContent = (typeof BUILD_VERSION !== 'undefined' ? BUILD_VERSION : '');
 
 buildLevel();
 gameLoop();
