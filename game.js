@@ -262,7 +262,7 @@ let questBlocks = [], powerups = [], pipes = [], checkpoints = [], powerUpPopups
 let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0;
 let cheatInfiniteLives = false, cheatImmortal = false, cheatUnlockAll = false;
 let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
-const LEVEL_TIME_LIMIT = 120 * 60;
+const LEVEL_TIME_LIMIT = 180 * 60;
 let levelTimer = LEVEL_TIME_LIMIT;
 let biome = BIOME.MEADOW, biomeTrans = 0;
 let countdown = 0, pendingLevel = 0, pendingSeed = 0;
@@ -1032,7 +1032,18 @@ function update() {
       levelTimer--;
       if (levelTimer <= 0 && !player.dead && !player.won) {
         if (inBonusRoom) exitBonusRoom();
-        playerDie(false);
+        stopStarMusic(); stopKillstreakMusic();
+        gameRunning=false; gameOver=true;
+        document.getElementById('finalScore').textContent='PUNKTE: '+score;
+        document.getElementById('finalCoins').textContent='MUNZEN: '+coinCount;
+        document.getElementById('finalDist').textContent='STRECKE: '+distance+'m';
+        if (score>highScore) { highScore=score; saveHighScore(); document.getElementById('finalHS').textContent='NEUER HIGHSCORE!'; }
+        else document.getElementById('finalHS').textContent='HIGHSCORE: '+highScore;
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+        if (mp.connected) {
+          if (mp.host) { document.getElementById('mpGameOverMsg').classList.add('hidden'); document.getElementById('restartBtn').style.display = ''; }
+          else { document.getElementById('mpGameOverMsg').classList.remove('hidden'); document.getElementById('restartBtn').style.display = 'none'; }
+        }
       } else if (levelTimer <= 1800 && levelTimer % 60 === 0) {
         sfxBlock();
       }
