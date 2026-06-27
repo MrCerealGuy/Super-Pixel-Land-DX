@@ -77,10 +77,16 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
 #mpScreen .btn-secondary { background: #5c3a1e; border-color: #8bac0f; color: #8bac0f; }
 #mpScreen .btn-host { background: #1a4a1a; border-color: #9bbc0f; color: #9bbc0f; }
 #mpError { color: #d04040; font-size: 0.8em; margin: 4px 0; text-align: center; min-height: 1.2em; }
-#mpPlayerList { margin: 8px 0; width: 200px; max-height: 120px; overflow-y: auto; }
-#mpPlayerList div { color: #8bac0f; font-size: 0.9em; text-align: center; padding: 3px 0; }
-#mpPlayerList .mp-host { color: #9bbc0f; font-weight: bold; }
-#mpPlayerList .mp-host::after { content: ' (HOST)'; color: #306230; font-size: 0.8em; }
+#mpPlayerList { margin: 8px 0; width: 220px; max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+#mpPlayerList > div {
+  color: #8bac0f; font-size: 0.9em; text-align: left; padding: 5px 10px;
+  border: 1px solid #306230; border-radius: 4px;
+  display: flex; align-items: center; gap: 6px;
+}
+#mpPlayerList .mp-host { color: #9bbc0f; font-weight: bold; border-color: #9bbc0f; background: rgba(155,188,15,0.05); }
+#mpPlayerList .mp-host::before { content: '★'; color: #9bbc0f; font-size: 1em; }
+#mpPlayerList .mp-me { border-color: #8bac0f; background: rgba(139,172,15,0.08); }
+#mpPlayerList .mp-me::before { content: '▶'; color: #8bac0f; font-size: 0.8em; }
 #mpLevelSelect { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
 #mpLevelSelect button { background: #306230; color: #9bbc0f; border: 2px solid #9bbc0f; font-size: 1em; padding: 4px 12px; border-radius: 6px; font-family: monospace; cursor: pointer; }
 #mpLevelSelect span { color: #9bbc0f; font-size: 1.1em; text-shadow: 2px 2px 0 #306230; min-width: 80px; text-align: center; }

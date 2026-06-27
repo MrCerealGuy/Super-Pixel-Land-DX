@@ -2753,8 +2753,8 @@ function updateMpPlayerList() {
   list.innerHTML = '';
   if (mp.connected) {
     const me = document.createElement('div');
-    me.textContent = mp.localName + ' (DU)';
-    me.style.color = '#9bbc0f';
+    me.textContent = mp.localName;
+    me.className = 'mp-me';
     list.appendChild(me);
   }
   for (const pid in mp.players) {
