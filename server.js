@@ -84,7 +84,12 @@ wss.on('connection', (ws) => {
           }
         } else {
           do { code = genRoomCode(); } while (rooms[code]);
-          rooms[code] = { code, host: ws, players: [], level: 0 };
+          rooms[code] = { code, host: ws, players: [], level: 0, playing: false };
+        }
+
+        if (rooms[code].playing) {
+          ws.send(JSON.stringify({ type: 'error', message: 'Spiel läuft bereits in diesem Raum' }));
+          return;
         }
 
         const room = rooms[code];
@@ -128,8 +133,15 @@ wss.on('connection', (ws) => {
         const room = rooms[ws._room];
         if (room.host !== ws) return;
         room.level = msg.level || 0;
+        room.playing = true;
         const seed = ((Date.now() & 0x7fffffff) ^ ((Math.random() * 0x7fffffff) | 0)) >>> 0;
         broadcast(room, { type: 'level_start', level: room.level, seed });
+        break;
+      }
+
+      case 'leave_level': {
+        if (!ws._room || !rooms[ws._room]) return;
+        rooms[ws._room].playing = false;
         break;
       }
 
@@ -151,6 +163,7 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     if (ws._room && rooms[ws._room]) {
       const room = rooms[ws._room];
+      room.playing = false;
       room.players = room.players.filter(p => p.ws !== ws);
       if (ws._pid) broadcast(room, { type: 'player_left', id: ws._pid });
       if (room.players.length === 0) {

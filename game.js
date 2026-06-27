@@ -896,7 +896,10 @@ function returnToMap() {
   document.getElementById('confirmDialog').classList.add('hidden');
   if (mp.connected) {
     mp.periodicSeed = null;
-    if (gameScreen === 'playing') mpSendEvent('player_left_level', { name: mp.localName });
+    if (gameScreen === 'playing') {
+      mpSendEvent('player_left_level', { name: mp.localName });
+      mpSend({ type: 'leave_level' });
+    }
     gameScreen = 'mpLobby'; gameRunning = true;
     document.getElementById('mapScreen').classList.add('hidden');
     document.getElementById('mpScreen').classList.remove('hidden');
