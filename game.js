@@ -891,6 +891,7 @@ function returnToMap() {
   document.getElementById('controls').style.display='flex';
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('mpGameOverMsg').classList.add('hidden');
+  document.getElementById('mpResultScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('confirmDialog').classList.add('hidden');
   if (mp.connected) {
@@ -906,6 +907,12 @@ function returnToMap() {
   }
   gameScreen = 'map'; gameRunning = true;
   document.getElementById('mapScreen').classList.remove('hidden');
+}
+
+function showMpResult(name, score, coins, distance) {
+  document.getElementById('mpResultScreen').classList.remove('hidden');
+  document.getElementById('mpResultWinner').textContent = name + ' HAT GEWONNEN!';
+  document.getElementById('mpResultStats').innerHTML = 'Punkte: ' + score + '<br>Münzen: ' + coins + '<br>Strecke: ' + (distance || 0) + 'm';
 }
 
 // ---- Update ----
@@ -1529,6 +1536,19 @@ function playerWins(bonus) {
   document.getElementById('scoreDisplay').textContent=String(score).padStart(6,'0');
   if (score>highScore) { highScore=score; saveHighScore(); }
   levels[currentLevel].completed = true;
+  // Notify other players
+  if (mp.connected) {
+    const winData = { name: mp.localName, score, coins: coinCount, distance };
+    mpSendEvent('player_won', winData);
+    setTimeout(()=>{
+      keys.jumpPressed=false; keys.jump=false;
+      keys.shootPressed=false; keys.shoot=false;
+      keys.left=false; keys.right=false; keys.down=false;
+      document.getElementById('gameOverScreen').classList.add('hidden');
+      showMpResult(winData.name, winData.score, winData.coins, winData.distance);
+    }, 1500);
+    return;
+  }
   setTimeout(()=>{
     keys.jumpPressed=false; keys.jump=false;
     keys.shootPressed=false; keys.shoot=false;
@@ -1542,8 +1562,6 @@ function playerWins(bonus) {
     document.getElementById('confirmDialog').classList.add('hidden');
     document.getElementById('mapScreen').classList.remove('hidden');
   }, 1500);
-  // Notify other players
-  if (mp.connected) mpSendEvent('player_won', {});
 }
 
 function checkExtraLife(px, py) {
@@ -2712,12 +2730,11 @@ function mpHandleEvent(event, data) {
       lives++;
       break;
     case 'player_won':
+      if (gameScreen !== 'playing') break;
       levels[currentLevel].completed = true;
       stopStarMusic();
-      returnToMap();
-      document.getElementById('mpMsgText').textContent = 'SPIELER HAT GEWONNEN!';
-      document.getElementById('mpMsgOverlay').classList.remove('hidden');
-      setTimeout(() => { document.getElementById('mpMsgOverlay').classList.add('hidden'); }, 3000);
+      gameRunning = false;
+      showMpResult(data.name || 'Ein Spieler', data.score || 0, data.coins || 0, data.distance || 0);
       break;
     case 'player_left_level':
       document.getElementById('mpMsgText').textContent = (data.name || 'Ein Spieler') + ' HAT DAS LEVEL VERLASSEN';
@@ -3019,6 +3036,14 @@ document.getElementById('quitConfirmYes').addEventListener('click',beendenQuit);
 document.getElementById('quitConfirmYes').addEventListener('touchend',e=>{e.preventDefault();beendenQuit();});
 document.getElementById('quitConfirmNo').addEventListener('click',()=>{document.getElementById('quitMain').style.display='';document.getElementById('quitConfirm').style.display='none';});
 document.getElementById('quitConfirmNo').addEventListener('touchend',e=>{e.preventDefault();document.getElementById('quitMain').style.display='';document.getElementById('quitConfirm').style.display='none';});
+document.getElementById('mpResultOkBtn').addEventListener('click',()=>{
+  document.getElementById('mpResultScreen').classList.add('hidden');
+  returnToMap();
+});
+document.getElementById('mpResultOkBtn').addEventListener('touchend',e=>{e.preventDefault();
+  document.getElementById('mpResultScreen').classList.add('hidden');
+  returnToMap();
+});
 
 setupInput();
 
