@@ -2626,12 +2626,15 @@ function mpHandleMessage(msg) {
       mpHandleEvent(msg.event, msg.data);
       break;
     case 'level_start':
-      if (countdown > 0 || gameScreen === 'playing') break;
+      if (countdown > 0) break;
+      if (gameScreen === 'playing' && !gameOver) break;
       countdown = 180;
       sfxBlock();
       pendingLevel = msg.level;
       pendingSeed = msg.seed;
       stopStarMusic();
+      document.getElementById('gameOverScreen').classList.add('hidden');
+      document.getElementById('mpGameOverMsg').classList.add('hidden');
       document.getElementById('mpScreen').classList.add('hidden');
       document.getElementById('mpMsgOverlay').classList.add('hidden');
       document.getElementById('controls').style.display = 'none';
