@@ -74,7 +74,11 @@ wss.on('connection', (ws) => {
         const name = (msg.name || 'Spieler').slice(0, 16);
         let code = msg.room ? msg.room.toUpperCase().trim() : '';
 
-        if (code && rooms[code]) {
+        if (code) {
+          if (!rooms[code]) {
+            ws.send(JSON.stringify({ type: 'error', message: 'Raum nicht gefunden' }));
+            return;
+          }
           if (rooms[code].players.length >= 4) {
             ws.send(JSON.stringify({ type: 'error', message: 'Raum voll (max 4)' }));
             return;
