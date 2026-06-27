@@ -133,6 +133,14 @@ wss.on('connection', (ws) => {
         break;
       }
 
+      case 'level_select': {
+        if (!ws._room || !rooms[ws._room]) return;
+        const room = rooms[ws._room];
+        if (room.host !== ws) return;
+        broadcast(room, { type: 'level_select', level: msg.level });
+        break;
+      }
+
       case 'ping': {
         ws.send(JSON.stringify({ type: 'pong' }));
         break;

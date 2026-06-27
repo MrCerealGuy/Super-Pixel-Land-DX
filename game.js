@@ -2592,6 +2592,10 @@ function mpHandleMessage(msg) {
     case 'error':
       document.getElementById('mpError').textContent = msg.message;
       break;
+    case 'level_select':
+      mp.lobbyLevel = msg.level;
+      document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+      break;
     case 'pong':
       break;
   }
@@ -2917,20 +2921,28 @@ document.getElementById('mpStartBtn').addEventListener('touchend', e=>{e.prevent
   if (mp.host && mp.connected) mpSend({ type: 'start_level', level: mp.lobbyLevel });
 });
 document.getElementById('mpLevelPrev').addEventListener('click', ()=>{
+  if (!mp.host) return;
   mp.lobbyLevel = (mp.lobbyLevel - 1 + levels.length) % levels.length;
   document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+  mpSend({ type: 'level_select', level: mp.lobbyLevel });
 });
 document.getElementById('mpLevelPrev').addEventListener('touchend', e=>{e.preventDefault();
+  if (!mp.host) return;
   mp.lobbyLevel = (mp.lobbyLevel - 1 + levels.length) % levels.length;
   document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+  mpSend({ type: 'level_select', level: mp.lobbyLevel });
 });
 document.getElementById('mpLevelNext').addEventListener('click', ()=>{
+  if (!mp.host) return;
   mp.lobbyLevel = (mp.lobbyLevel + 1) % levels.length;
   document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+  mpSend({ type: 'level_select', level: mp.lobbyLevel });
 });
 document.getElementById('mpLevelNext').addEventListener('touchend', e=>{e.preventDefault();
+  if (!mp.host) return;
   mp.lobbyLevel = (mp.lobbyLevel + 1) % levels.length;
   document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+  mpSend({ type: 'level_select', level: mp.lobbyLevel });
 });
 
 function beendenSave() {
