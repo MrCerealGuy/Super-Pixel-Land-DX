@@ -884,7 +884,7 @@ function restartGame() {
     return;
   }
   if (gameScreen === 'map') { newGame(); return; }
-  if (!gameRunning) { newGame(); return; }
+  if (!gameRunning && !gameOver) { newGame(); return; }
   resetGame();
 }
 
