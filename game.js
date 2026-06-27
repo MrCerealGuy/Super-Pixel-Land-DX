@@ -262,7 +262,7 @@ let questBlocks = [], powerups = [], pipes = [], checkpoints = [], powerUpPopups
 let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0;
 let cheatInfiniteLives = false, cheatImmortal = false, cheatUnlockAll = false;
 let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
-const LEVEL_TIME_LIMIT = 300 * 60;
+const LEVEL_TIME_LIMIT = 120 * 60;
 let levelTimer = LEVEL_TIME_LIMIT;
 let biome = BIOME.MEADOW, biomeTrans = 0;
 let countdown = 0, pendingLevel = 0, pendingSeed = 0;
@@ -1033,7 +1033,7 @@ function update() {
       if (levelTimer <= 0 && !player.dead && !player.won) {
         if (inBonusRoom) exitBonusRoom();
         playerDie(false);
-      } else if (levelTimer <= 3000 && levelTimer % 60 === 0) {
+      } else if (levelTimer <= 1800 && levelTimer % 60 === 0) {
         sfxBlock();
       }
     }
@@ -1501,8 +1501,8 @@ function update() {
   document.getElementById('coinsDisplay').textContent=String(coinCount).padStart(2,'0');
   const secs = Math.max(0, Math.ceil(levelTimer / 60));
   const td = document.getElementById('timerDisplay');
-  td.textContent = String(Math.floor(secs / 60)).padStart(2,'0') + ':' + String(secs % 60).padStart(2,'0');
-  td.className = secs <= 60 ? 'low' : '';
+  td.textContent = String(secs);
+  td.className = secs <= 30 ? 'low' : '';
   let ls = 'LEBEN '+lives;
   if (p.big) ls+=' BIG';
   if (p.star>0) ls+=' STERN';
