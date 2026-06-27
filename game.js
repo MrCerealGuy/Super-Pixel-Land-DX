@@ -263,6 +263,7 @@ let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0;
 let cheatInfiniteLives = false, cheatImmortal = false, cheatUnlockAll = false;
 let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
 let biome = BIOME.MEADOW, biomeTrans = 0;
+let countdown = 0, pendingLevel = 0, pendingSeed = 0;
 let comboCount = 0, comboTimer = 0;
 let killstreakCount = 0, killstreakWindow = 0, killstreakTimer = 0, killstreakPopup = 0;
 let lastEnemySpawnX = 0, levelGaps = [];
@@ -909,6 +910,11 @@ function returnToMap() {
 
 // ---- Update ----
 function update() {
+  if (countdown > 0) {
+    countdown--;
+    if (countdown === 0) mpStartLevel(pendingLevel, pendingSeed);
+    return;
+  }
   if (!gameRunning || gameOver || gameScreen === 'mpLobby') return;
 
   // ---- Map Screen ----
@@ -2137,6 +2143,17 @@ function drawMap() {
 }
 
 function draw() {
+  if (countdown > 0) {
+    const num = Math.ceil(countdown / 60);
+    ctx.save();
+    ctx.scale(S, S);
+    ctx.fillStyle = COL.darkest;
+    ctx.fillRect(0, 0, W, H);
+    const ts = String(num);
+    drawPixelText(ts, Math.floor(W/2 - ts.length * 3), Math.floor(H/2 - 3), COL.star);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.scale(S, S);
 
@@ -2587,7 +2604,22 @@ function mpHandleMessage(msg) {
       mpHandleEvent(msg.event, msg.data);
       break;
     case 'level_start':
-      mpStartLevel(msg.level, msg.seed);
+      if (countdown > 0 || gameScreen === 'playing') break;
+      countdown = 180;
+      pendingLevel = msg.level;
+      pendingSeed = msg.seed;
+      stopStarMusic();
+      document.getElementById('mpScreen').classList.add('hidden');
+      document.getElementById('mpMsgOverlay').classList.add('hidden');
+      document.getElementById('controls').style.display = 'flex';
+      document.getElementById('rightGroup').style.display = '';
+      document.getElementById('enterBtn').style.display = '';
+      document.getElementById('fireBtn').style.display = '';
+      document.getElementById('mapTouchBtn').style.display = '';
+      if (mp.host) document.getElementById('restartTouchBtn').style.display = '';
+      else document.getElementById('restartTouchBtn').style.display = 'none';
+      document.getElementById('statusBar').style.display = '';
+      document.getElementById('powerUpBar').style.display = '';
       break;
     case 'error':
       document.getElementById('mpError').textContent = msg.message;
