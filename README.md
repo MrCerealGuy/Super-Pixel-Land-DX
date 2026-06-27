@@ -159,8 +159,6 @@ Der Server läuft standardmäßig auf Port **8080** (HTTP + WebSocket auf einem 
 npx serve .
 ```
 
-Oder live auf GitHub Pages: https://mrcerealguy.github.io/Super-Pixel-Land-DX/
-
 ### Multiplayer (mit Server)
 
 ```bash

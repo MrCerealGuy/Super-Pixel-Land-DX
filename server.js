@@ -167,17 +167,16 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     if (ws._room && rooms[ws._room]) {
       const room = rooms[ws._room];
-      if (room.host === ws) room.playing = false;
+      if (room.host === ws) {
+        broadcast(room, { type: 'kicked' });
+        for (const p of room.players) if (p.ws !== ws) p.ws.close();
+        delete rooms[ws._room];
+        return;
+      }
+      room.playing = false;
       room.players = room.players.filter(p => p.ws !== ws);
       if (ws._pid) broadcast(room, { type: 'player_left', id: ws._pid });
-      if (room.players.length === 0) {
-        delete rooms[ws._room];
-      } else if (room.host === ws) {
-        broadcast(room, { type: 'force_leave' });
-        room.host = room.players[0].ws;
-        room.players[0].host = true;
-        broadcast(room, { type: 'host_changed', id: room.players[0].id });
-      }
+      if (room.players.length === 0) delete rooms[ws._room];
     }
   });
 });

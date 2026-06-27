@@ -396,10 +396,11 @@ function rand(min,max){
 function randInt(min,max){return Math.floor(rand(min,max+1));}
 function inGap(x,gaps){for(const g of gaps)if(x>=g[0]&&x<g[1])return true;return false;}
 
+const L = 10000;
+
 function buildLevel(levelIndex) {
   platforms=[]; coins=[]; enemies=[]; particles=[]; movingPlats=[];
-  questBlocks=[]; powerups=[]; pipes=[]; checkpoints=[]; fireballs=[];
-  const L = 10000;
+  questBlocks=[]; powerups=[]; pipes=[]; checkpoints=[]; fireballs=[]; mpResults.length = 0;
   biome = (levelIndex!==undefined) ? levels[levelIndex].biome : BIOME.MEADOW;
 
   // Use level index to vary seeds for different levels
@@ -912,10 +913,26 @@ function returnToMap() {
   document.getElementById('mapScreen').classList.remove('hidden');
 }
 
+const mpResults = [];
+
 function showMpResult(name, score, coins, distance) {
+  if (!mpResults.some(r => r.name === name)) {
+    mpResults.push({ name, score, coins, distance: distance || 0 });
+  }
+  mpResults.sort((a, b) => b.score - a.score);
   document.getElementById('mpResultScreen').classList.remove('hidden');
-  document.getElementById('mpResultWinner').textContent = name + ' HAT GEWONNEN!';
-  document.getElementById('mpResultStats').innerHTML = 'Punkte: ' + score + '<br>Münzen: ' + coins + '<br>Strecke: ' + (distance || 0) + 'm';
+  let html = '<div style="color:#9bbc0f;font-size:1.1em;margin-bottom:6px;text-align:center">' + mpResults[0].name + ' HAT GEWONNEN!</div>';
+  html += '<div style="border-bottom:1px solid #306230;margin-bottom:6px;padding-bottom:4px">';
+  for (let i = 0; i < mpResults.length; i++) {
+    const r = mpResults[i];
+    const medal = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+    html += '<div style="display:flex;justify-content:space-between;gap:16px;padding:2px 8px';
+    if (i === 0) html += ';background:#1b3d1b;border-radius:4px';
+    html += '"><span>' + medal + ' ' + r.name + '</span>';
+    html += '<span>' + r.score + ' Pkt · ' + r.coins + ' 🪙 · ' + r.distance + 'm</span></div>';
+  }
+  html += '</div>';
+  document.getElementById('mpResultList').innerHTML = html;
 }
 
 // ---- Update ----
@@ -1171,7 +1188,7 @@ function update() {
     if (qb.hit) continue;
     const qr={x:qb.x,y:qb.y,w:qb.w,h:qb.h};
     if (!rectCollide(pRect2,qr)||p.vy>=0) continue;
-    if (p.y > qb.y + qb.h - 12 && p.y < qb.y + qb.h + 6) {
+    if (p.y > qb.y + qb.h - 16 && p.y < qb.y + qb.h + 6) {
       qb.hit=true; qb.bounce=4; sfxBlock();
       if (qb.contents==='coin'){coinCount++;score+=100;spawnParticles(qb.x+6,qb.y,6,COL.star);checkExtraLife(qb.x+6,qb.y);if(mp.connected&&qb._id)mpSendEvent('quest_block_hit',{id:qb._id,contents:'coin'});}
       else if (qb.contents==='power'){
@@ -1231,8 +1248,8 @@ function update() {
     }
   }
 
-  // ---- Periodic enemy spawn ahead (singleplayer only; pre-generated in buildLevel for mp) ----
-  if (!mp.periodicSeed && p.x > lastEnemySpawnX + 400 && p.x < L - 20) {
+  // ---- Periodic enemy spawn ahead ----
+  if (p.x > lastEnemySpawnX + 400 && p.x < L - 20) {
     lastEnemySpawnX = Math.floor(p.x / 400) * 400;
     const startX = lastEnemySpawnX + 200;
     const endX = startX + 300;
@@ -1811,7 +1828,7 @@ function drawQuestBlock(qb,cx) {
     cFill='#9bbc0f'; cLight='#a0b84f'; cDark='#306230';
     cMark='#0f380f'; cMarkHi='#306230'; cMarkLo=COL.darkest; cHit='#306230';
   }
-  const hit = qb.hit && qb.contents!=='coin';
+  const hit = qb.hit;
 
   // Outer shadow (bottom-right)
   ctx.fillStyle=cDark;
@@ -1865,7 +1882,7 @@ function drawQuestBlock(qb,cx) {
     ctx.fillRect(dx+2,by+11,3,1);
   }
   // ? mark (sprite-based with 3D shading)
-  if (!qb.hit || qb.contents!=='coin') {
+  if (!qb.hit) {
     // Shadow of ? (offset right-down)
     drawSprite([
       '..QQQQQ...',
@@ -2653,6 +2670,9 @@ function mpHandleMessage(msg) {
     case 'force_leave':
       if (gameScreen === 'playing' || gameScreen === 'mpLobby') returnToMap();
       break;
+    case 'kicked':
+      mpDisconnect('Raum aufgelöst – Host hat verlassen');
+      break;
     case 'pong':
       break;
   }
@@ -2740,7 +2760,6 @@ function mpHandleEvent(event, data) {
       if (gameScreen !== 'playing') break;
       levels[currentLevel].completed = true;
       stopStarMusic();
-      gameRunning = false;
       showMpResult(data.name || 'Ein Spieler', data.score || 0, data.coins || 0, data.distance || 0);
       break;
     case 'player_left_level':
