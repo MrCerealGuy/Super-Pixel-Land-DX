@@ -71,7 +71,6 @@ wss.on('connection', (ws) => {
 
     switch (msg.type) {
       case 'join': {
-        const name = (msg.name || 'Spieler').slice(0, 16);
         let code = msg.room ? msg.room.toUpperCase().trim() : '';
 
         if (code) {
@@ -89,6 +88,8 @@ wss.on('connection', (ws) => {
         }
 
         const room = rooms[code];
+        const playerNum = room.players.length + 1;
+        const name = 'Spieler ' + playerNum;
         ws._pid = 'p' + (nextId++);
         ws._pname = name;
         ws._room = code;
@@ -100,6 +101,7 @@ wss.on('connection', (ws) => {
         ws.send(JSON.stringify({
           type: 'joined',
           id: ws._pid,
+          name,
           room: code,
           host: isHost,
           players: room.players.map(p => ({ id: p.id, name: p.name, host: p.host }))

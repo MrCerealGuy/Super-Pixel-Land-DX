@@ -2381,7 +2381,7 @@ function drawPixelChar(ch,x,y,color){
 function drawPixelText(t,x,y,color){for(let i=0;i<t.length;i++)drawPixelChar(t[i],x+i*6,y,color);}
 
 // ---- Multiplayer Connection & Logic ----
-function mpConnect(name, roomCode) {
+function mpConnect(roomCode) {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = location.host || 'localhost:8080';
   const url = protocol + '//' + host;
@@ -2396,7 +2396,7 @@ function mpConnect(name, roomCode) {
   }
   mpConn.onopen = () => {
     document.getElementById('mpError').textContent = '';
-    mpSend({ type: 'join', name, room: roomCode || undefined });
+    mpSend({ type: 'join', room: roomCode || undefined });
   };
   mpConn.onmessage = (ev) => {
     let msg;
@@ -2478,7 +2478,7 @@ function mpHandleMessage(msg) {
       document.getElementById('infiniteLivesBtn').textContent = 'UNENDLICH LEBEN: AUS';
       document.getElementById('immortalBtn').textContent = 'UNSTERBLICH: AUS';
       document.getElementById('unlockAllBtn').textContent = 'ALLE LEVEL FREISCHALTEN: AUS';
-      mp.connected = true; mp.id = msg.id; mp.room = msg.room; mp.host = msg.host;
+      mp.connected = true; mp.id = msg.id; mp.room = msg.room; mp.host = msg.host; mp.localName = msg.name;
       mp.players = {};
       for (const p of msg.players) {
         if (p.id !== mp.id) mp.players[p.id] = { id: p.id, name: p.name, host: p.host };
@@ -2813,28 +2813,20 @@ document.getElementById('mpBackBtn').addEventListener('touchend', e=>{e.preventD
   document.getElementById('startScreen').classList.remove('hidden');
 });
 document.getElementById('mpCreateBtn').addEventListener('click', ()=>{
-  const name = document.getElementById('mpNameInput').value.trim() || 'Spieler';
-  mp.localName = name;
-  mpConnect(name, '');
+  mpConnect('');
 });
 document.getElementById('mpCreateBtn').addEventListener('touchend', e=>{e.preventDefault();
-  const name = document.getElementById('mpNameInput').value.trim() || 'Spieler';
-  mp.localName = name;
-  mpConnect(name, '');
+  mpConnect('');
 });
 document.getElementById('mpJoinBtn').addEventListener('click', ()=>{
-  const name = document.getElementById('mpNameInput').value.trim() || 'Spieler';
   const code = document.getElementById('mpCodeInput').value.trim().toUpperCase();
   if (!code) { document.getElementById('mpError').textContent = 'Raum-Code eingeben!'; return; }
-  mp.localName = name;
-  mpConnect(name, code);
+  mpConnect(code);
 });
 document.getElementById('mpJoinBtn').addEventListener('touchend', e=>{e.preventDefault();
-  const name = document.getElementById('mpNameInput').value.trim() || 'Spieler';
   const code = document.getElementById('mpCodeInput').value.trim().toUpperCase();
   if (!code) { document.getElementById('mpError').textContent = 'Raum-Code eingeben!'; return; }
-  mp.localName = name;
-  mpConnect(name, code);
+  mpConnect(code);
 });
 document.getElementById('mpLeaveBtn').addEventListener('click', ()=>{
   mpDisconnect('Raum verlassen');
