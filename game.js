@@ -2467,6 +2467,7 @@ function mpStartLevel(level, seed) {
   }
   document.getElementById('statusBar').style.display = '';
   document.getElementById('powerUpBar').style.display = '';
+  goFullscreen();
   gameScreen = 'playing';
 }
 function mpHandleMessage(msg) {
