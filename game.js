@@ -1049,6 +1049,11 @@ function update() {
       }
     }
   }
+  // Timer display (update before bonus room return)
+  const secs = Math.max(0, Math.ceil(levelTimer / 60));
+  const td = document.getElementById('timerDisplay');
+  td.textContent = String(secs);
+  td.className = secs <= 30 ? 'low' : '';
 
   // ---- Bonus Room ----
   if (inBonusRoom) {
@@ -1510,10 +1515,6 @@ function update() {
   // UI
   document.getElementById('scoreDisplay').textContent=String(score).padStart(6,'0');
   document.getElementById('coinsDisplay').textContent=String(coinCount).padStart(2,'0');
-  const secs = Math.max(0, Math.ceil(levelTimer / 60));
-  const td = document.getElementById('timerDisplay');
-  td.textContent = String(secs);
-  td.className = secs <= 30 ? 'low' : '';
   let ls = 'LEBEN '+lives;
   if (p.big) ls+=' BIG';
   if (p.star>0) ls+=' STERN';
@@ -2925,13 +2926,7 @@ function restartFromGameOver() {
     if (mp.host) { document.getElementById('gameOverScreen').classList.add('hidden'); restartGame(); }
     return;
   }
-  document.getElementById('gameOverScreen').classList.add('hidden');
-  document.getElementById('startScreen').classList.remove('hidden');
-  document.getElementById('mapScreen').classList.add('hidden');
-  document.getElementById('confirmDialog').classList.add('hidden');
-  gameOver = false; gameRunning = false;
-  currentLevel = 0; selectedLevel = 0; lives = 3;
-  updateContinueBtn();
+  resetGame();
 }
 function showHelp() {
   document.getElementById('startScreen').classList.add('hidden');
