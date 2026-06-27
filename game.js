@@ -894,6 +894,7 @@ function returnToMap() {
   document.getElementById('confirmDialog').classList.add('hidden');
   if (mp.connected) {
     mp.periodicSeed = null;
+    if (gameScreen === 'playing') mpSendEvent('player_left_level', { name: mp.localName });
     gameScreen = 'mpLobby'; gameRunning = true;
     document.getElementById('mapScreen').classList.add('hidden');
     document.getElementById('mpScreen').classList.remove('hidden');
@@ -2529,11 +2530,10 @@ function mpStartLevel(level, seed) {
   document.getElementById('fireBtn').style.display = '';
   if (mp.connected && !mp.host) {
     document.getElementById('restartTouchBtn').style.display = 'none';
-    document.getElementById('mapTouchBtn').style.display = 'none';
   } else {
     document.getElementById('restartTouchBtn').style.display = '';
-    document.getElementById('mapTouchBtn').style.display = '';
   }
+  document.getElementById('mapTouchBtn').style.display = '';
   document.getElementById('statusBar').style.display = '';
   document.getElementById('powerUpBar').style.display = '';
   goFullscreen();
@@ -2680,6 +2680,11 @@ function mpHandleEvent(event, data) {
       stopStarMusic();
       returnToMap();
       document.getElementById('mpMsgText').textContent = 'SPIELER HAT GEWONNEN!';
+      document.getElementById('mpMsgOverlay').classList.remove('hidden');
+      setTimeout(() => { document.getElementById('mpMsgOverlay').classList.add('hidden'); }, 3000);
+      break;
+    case 'player_left_level':
+      document.getElementById('mpMsgText').textContent = (data.name || 'Ein Spieler') + ' HAT DAS LEVEL VERLASSEN';
       document.getElementById('mpMsgOverlay').classList.remove('hidden');
       setTimeout(() => { document.getElementById('mpMsgOverlay').classList.add('hidden'); }, 3000);
       break;
