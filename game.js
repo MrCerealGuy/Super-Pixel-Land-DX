@@ -2266,7 +2266,17 @@ function draw() {
   }
 
   // Player
-  if (!player.dead) drawPlayer(player.x-cx, player.y, player.facing, player.frame, player.onGround, player.big, player.star);
+  if (!player.dead) {
+    drawPlayer(player.x-cx, player.y, player.facing, player.frame, player.onGround, player.big, player.star);
+    if (mp.connected && mp.localName) {
+      const n = mp.localName.substring(0, 8);
+      const tx = Math.round(player.x - cx - n.length * 2.5 + 6);
+      const ty = Math.round(player.y - 16);
+      ctx.fillStyle = COL.darkest;
+      ctx.fillRect(tx - 1, ty - 1, n.length * 6 + 1, 8);
+      drawPixelText(n, tx, ty, COL.light);
+    }
+  }
   // Remote players (multiplayer)
   if (mp.connected) {
     for (const pid in mp.players) {
@@ -2276,9 +2286,12 @@ function draw() {
       drawPlayer(rp.x - cx, rp.y, rp.facing || 1, rp.frame || 0, rp.onGround, rp.big || false, rp.star || 0);
       ctx.globalAlpha = 1;
       if (rp.name) {
-        ctx.globalAlpha = 0.6;
-        drawPixelText(rp.name.substring(0, 8), Math.round(rp.x - cx - rp.name.length * 2.5 + 6), Math.round(rp.y - 10), COL.skyLight);
-        ctx.globalAlpha = 1;
+        const n = rp.name.substring(0, 8);
+        const tx = Math.round(rp.x - cx - n.length * 2.5 + 6);
+        const ty = Math.round(rp.y - 16);
+        ctx.fillStyle = COL.darkest;
+        ctx.fillRect(tx - 1, ty - 1, n.length * 6 + 1, 8);
+        drawPixelText(n, tx, ty, COL.light);
       }
     }
   }
