@@ -1032,7 +1032,7 @@ function update() {
       levelTimer--;
       if (levelTimer <= 0 && !player.dead && !player.won) {
         if (inBonusRoom) exitBonusRoom();
-        die();
+        playerDie(false);
       } else if (levelTimer <= 3000 && levelTimer % 60 === 0) {
         sfxBlock();
       }
