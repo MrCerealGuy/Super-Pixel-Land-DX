@@ -1828,7 +1828,7 @@ function drawQuestBlock(qb,cx) {
     cFill='#9bbc0f'; cLight='#a0b84f'; cDark='#306230';
     cMark='#0f380f'; cMarkHi='#306230'; cMarkLo=COL.darkest; cHit='#306230';
   }
-  const hit = qb.hit;
+  const hit = qb.hit && qb.contents!=='coin';
 
   // Outer shadow (bottom-right)
   ctx.fillStyle=cDark;
