@@ -2563,6 +2563,7 @@ function mpStartLevel(level, seed) {
   document.getElementById('mapScreen').classList.add('hidden');
   document.getElementById('mpScreen').classList.add('hidden');
   document.getElementById('mpMsgOverlay').classList.add('hidden');
+  document.getElementById('topBtns').style.display = '';
   document.getElementById('controls').style.display = 'flex';
   document.getElementById('rightGroup').style.display = '';
   document.getElementById('enterBtn').style.display = '';
@@ -2637,6 +2638,7 @@ function mpHandleMessage(msg) {
       document.getElementById('mpGameOverMsg').classList.add('hidden');
       document.getElementById('mpScreen').classList.add('hidden');
       document.getElementById('mpMsgOverlay').classList.add('hidden');
+      document.getElementById('topBtns').style.display = 'none';
       document.getElementById('controls').style.display = 'none';
       document.getElementById('statusBar').style.display = '';
       document.getElementById('powerUpBar').style.display = '';
