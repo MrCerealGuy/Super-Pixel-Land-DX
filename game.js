@@ -2272,9 +2272,7 @@ function draw() {
       const n = mp.localName.substring(0, 10);
       const tx = Math.round(player.x - cx - n.length * 2.5 + 6);
       const ty = Math.round(player.y - 16);
-      ctx.fillStyle = COL.darkest;
-      ctx.fillRect(tx - 1, ty - 1, n.length * 6 + 1, 8);
-      drawPixelText(n, tx, ty, COL.light);
+      drawPixelText(n, tx, ty, COL.white);
     }
   }
   // Remote players (multiplayer)
@@ -2289,9 +2287,7 @@ function draw() {
         const n = rp.name.substring(0, 10);
         const tx = Math.round(rp.x - cx - n.length * 2.5 + 6);
         const ty = Math.round(rp.y - 16);
-        ctx.fillStyle = COL.darkest;
-        ctx.fillRect(tx - 1, ty - 1, n.length * 6 + 1, 8);
-        drawPixelText(n, tx, ty, COL.light);
+        drawPixelText(n, tx, ty, COL.white);
       }
     }
   }
