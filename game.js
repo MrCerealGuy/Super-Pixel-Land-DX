@@ -954,6 +954,7 @@ function update() {
         document.getElementById('fireBtn').style.display='';
         document.getElementById('restartTouchBtn').style.display='';
         document.getElementById('mapTouchBtn').style.display='';
+        document.getElementById('mapTouchBtn').textContent = 'KARTE';
         document.getElementById('statusBar').style.display='';
         document.getElementById('powerUpBar').style.display='';
         resetGame();
@@ -1170,7 +1171,7 @@ function update() {
     if (qb.hit) continue;
     const qr={x:qb.x,y:qb.y,w:qb.w,h:qb.h};
     if (!rectCollide(pRect2,qr)||p.vy>=0) continue;
-    if (p.y > qb.y + qb.h - 4 && p.y < qb.y + qb.h + 6) {
+    if (p.y > qb.y + qb.h - 12 && p.y < qb.y + qb.h + 6) {
       qb.hit=true; qb.bounce=4; sfxBlock();
       if (qb.contents==='coin'){coinCount++;score+=100;spawnParticles(qb.x+6,qb.y,6,COL.star);checkExtraLife(qb.x+6,qb.y);if(mp.connected&&qb._id)mpSendEvent('quest_block_hit',{id:qb._id,contents:'coin'});}
       else if (qb.contents==='power'){
@@ -2573,6 +2574,7 @@ function mpStartLevel(level, seed) {
     document.getElementById('restartTouchBtn').style.display = '';
   }
   document.getElementById('mapTouchBtn').style.display = '';
+  document.getElementById('mapTouchBtn').textContent = 'LOBBY';
   document.getElementById('statusBar').style.display = '';
   document.getElementById('powerUpBar').style.display = '';
   goFullscreen();
@@ -2627,7 +2629,6 @@ function mpHandleMessage(msg) {
       break;
     case 'level_start':
       if (countdown > 0) break;
-      if (gameScreen === 'playing' && !gameOver) break;
       countdown = 180;
       sfxBlock();
       pendingLevel = msg.level;
@@ -2648,6 +2649,9 @@ function mpHandleMessage(msg) {
     case 'level_select':
       mp.lobbyLevel = msg.level;
       document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+      break;
+    case 'force_leave':
+      if (gameScreen === 'playing' || gameScreen === 'mpLobby') returnToMap();
       break;
     case 'pong':
       break;
