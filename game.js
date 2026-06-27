@@ -2269,7 +2269,7 @@ function draw() {
   if (!player.dead) {
     drawPlayer(player.x-cx, player.y, player.facing, player.frame, player.onGround, player.big, player.star);
     if (mp.connected && mp.localName) {
-      const n = mp.localName.substring(0, 8);
+      const n = mp.localName.substring(0, 10);
       const tx = Math.round(player.x - cx - n.length * 2.5 + 6);
       const ty = Math.round(player.y - 16);
       ctx.fillStyle = COL.darkest;
@@ -2286,7 +2286,7 @@ function draw() {
       drawPlayer(rp.x - cx, rp.y, rp.facing || 1, rp.frame || 0, rp.onGround, rp.big || false, rp.star || 0);
       ctx.globalAlpha = 1;
       if (rp.name) {
-        const n = rp.name.substring(0, 8);
+        const n = rp.name.substring(0, 10);
         const tx = Math.round(rp.x - cx - n.length * 2.5 + 6);
         const ty = Math.round(rp.y - 16);
         ctx.fillStyle = COL.darkest;
@@ -2366,26 +2366,45 @@ function draw() {
 // ---- Pixel Font ----
 const FONT={
   A:[0b01110,0b10001,0b11111,0b10001,0b10001,0b10001],
+  B:[0b11110,0b10001,0b11110,0b10001,0b10001,0b11110],
   C:[0b01110,0b10001,0b10000,0b10000,0b10001,0b01110],
+  D:[0b11110,0b10001,0b10001,0b10001,0b10001,0b11110],
   E:[0b11111,0b10000,0b11110,0b10000,0b10000,0b11111],
   F:[0b11111,0b10000,0b11110,0b10000,0b10000,0b10000],
   G:[0b01110,0b10001,0b10000,0b10111,0b10001,0b01110],
   H:[0b10001,0b10001,0b11111,0b10001,0b10001,0b10001],
   I:[0b00100,0b01110,0b00100,0b00100,0b00100,0b01110],
+  J:[0b00010,0b00010,0b00010,0b00010,0b10010,0b01100],
   K:[0b10001,0b10010,0b11100,0b10010,0b10001,0b10001],
   L:[0b01000,0b01000,0b01000,0b01000,0b01000,0b01111],
   M:[0b10001,0b11011,0b10101,0b10001,0b10001,0b10001],
   N:[0b10001,0b10001,0b11001,0b10101,0b10011,0b10001],
   O:[0b01110,0b10001,0b10001,0b10001,0b10001,0b01110],
   P:[0b01110,0b10001,0b10001,0b11110,0b10000,0b10000],
+  Q:[0b01110,0b10001,0b10001,0b10001,0b10011,0b01110],
   R:[0b11110,0b10001,0b11110,0b10100,0b10010,0b10001],
   S:[0b01110,0b10001,0b01100,0b00110,0b10001,0b01110],
   T:[0b11111,0b00100,0b00100,0b00100,0b00100,0b00100],
   U:[0b10001,0b10001,0b10001,0b10001,0b10001,0b01110],
   V:[0b10001,0b10001,0b10001,0b10001,0b01110,0b00100],
   W:[0b10001,0b10001,0b10001,0b10101,0b11011,0b10001],
+  X:[0b10001,0b10001,0b01110,0b10001,0b10001,0b10001],
+  Y:[0b10001,0b10001,0b01110,0b00100,0b00100,0b00100],
   Z:[0b11111,0b00001,0b00011,0b00110,0b01100,0b11111],
+  ' ':[0,0,0,0,0,0],
+  '0':[0b01110,0b10001,0b10011,0b10101,0b11001,0b01110],
+  '1':[0b00100,0b01100,0b00100,0b00100,0b00100,0b01110],
+  '2':[0b01110,0b10001,0b00001,0b00110,0b01000,0b11111],
+  '3':[0b01110,0b10001,0b00110,0b00001,0b10001,0b01110],
+  '4':[0b00010,0b00110,0b01010,0b11111,0b00010,0b00010],
+  '5':[0b11111,0b10000,0b11110,0b00001,0b10001,0b01110],
+  '6':[0b01110,0b10000,0b11110,0b10001,0b10001,0b01110],
+  '7':[0b11111,0b00001,0b00010,0b00100,0b01000,0b01000],
+  '8':[0b01110,0b10001,0b01110,0b10001,0b10001,0b01110],
+  '9':[0b01110,0b10001,0b10001,0b01111,0b00001,0b01110],
 };
+// Lowercase = same as uppercase for the pixel font
+for (const ch of 'abcdefghijklmnopqrstuvwxyz') FONT[ch] = FONT[ch.toUpperCase()];
 function drawPixelChar(ch,x,y,color){
   const g=FONT[ch]; if(!g)return;
   ctx.fillStyle=color;
