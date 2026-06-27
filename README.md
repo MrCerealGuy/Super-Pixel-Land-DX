@@ -177,3 +177,11 @@ https://super-pixel-land-dx.onrender.com
 ```
 
 Einfach die URL im Browser öffnen – kein eigener Server nötig. WebSocket und HTTP laufen auf demselben Port. Hinweis: Der Render Free-Tier schaltet nach 15 Min Inaktivität ab (erster Aufruf nach Pause dauert ~30s).
+
+### Build-Version
+
+Auf dem Startbildschirm unten rechts wird die aktuelle Commit-ID + Datum angezeigt (`version.js`). Vor Deployment aktualisieren:
+
+```powershell
+.\update-version.ps1
+```
