@@ -606,7 +606,7 @@ function buildLevel(levelIndex) {
   for (let x=300; x<2200; x+=120+Math.random()*40) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.6-Math.random()*0.4, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
   for (let x=2200; x<5200; x+=110+Math.random()*40) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.7-Math.random()*0.4, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
   for (let x=5200; x<7700; x+=100+Math.random()*30) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.8-Math.random()*0.4, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
-  for (let x=7700; x<10000; x+=80+Math.random()*30) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.9-Math.random()*0.5, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
+  for (let x=7700; x<10000; x+=70+Math.random()*25) { enemies.push({x, y:H-28, w:12, h:12, vx:-0.9-Math.random()*0.5, vy:0, type:'ground', alive:true, hp:1, frame:0}); }
   // Flying enemies
   for (let x=2400; x<5200; x+=200+Math.random()*100) {
     enemies.push({x, y:H-60-Math.random()*40, w:12, h:12, vx:-0.5-Math.random()*0.3, vy:0, type:'flying', alive:true, hp:1, frame:0, flyOff:0, flyPhase: Math.random()*Math.PI*2});
@@ -670,9 +670,9 @@ function buildLevel(levelIndex) {
 
   // Pre-generate periodic enemies for multiplayer (deterministic via seeded Math.random)
   if (mp.seed != null) {
-    for (let sec = 0; sec <= 9600; sec += 400) {
+    for (let sec = 0; sec < L; sec += 400) {
       const startX = sec + 200, endX = startX + 300;
-      if (startX >= 9800) continue;
+      if (startX >= L - 20) continue;
       for (let x = startX; x < endX; x += 100 + Math.random() * 60) {
         if (levelGaps.some(g => x >= g[0] && x < g[1])) continue;
         enemies.push({ x, y: H - 28, w: 12, h: 12, vx: -0.7 - Math.random() * 0.5, vy: 0, type: 'ground', alive: true, hp: 1, frame: 0 });
@@ -1214,7 +1214,7 @@ function update() {
   }
 
   // ---- Periodic enemy spawn ahead (singleplayer only; pre-generated in buildLevel for mp) ----
-  if (!mp.periodicSeed && p.x > lastEnemySpawnX + 400 && p.x < 9800) {
+  if (!mp.periodicSeed && p.x > lastEnemySpawnX + 400 && p.x < L - 20) {
     lastEnemySpawnX = Math.floor(p.x / 400) * 400;
     const startX = lastEnemySpawnX + 200;
     const endX = startX + 300;
