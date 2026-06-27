@@ -2638,9 +2638,8 @@ function mpHandleMessage(msg) {
       document.getElementById('rightGroup').style.display = '';
       document.getElementById('enterBtn').style.display = '';
       document.getElementById('fireBtn').style.display = '';
-      document.getElementById('mapTouchBtn').style.display = '';
-      if (mp.host) document.getElementById('restartTouchBtn').style.display = '';
-      else document.getElementById('restartTouchBtn').style.display = 'none';
+      document.getElementById('mapTouchBtn').style.display = 'none';
+      document.getElementById('restartTouchBtn').style.display = 'none';
       document.getElementById('statusBar').style.display = '';
       document.getElementById('powerUpBar').style.display = '';
       break;
