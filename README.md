@@ -180,8 +180,19 @@ Einfach die URL im Browser öffnen – kein eigener Server nötig. WebSocket und
 
 ### Build-Version
 
-Auf dem Startbildschirm unten rechts wird die aktuelle Commit-ID + Datum angezeigt (`version.js`). Vor Deployment aktualisieren:
+Auf dem Startbildschirm unten rechts wird die aktuelle Commit-ID + Datum angezeigt (`version.js`). `version.js` wird nicht in Git getrackt, sondern vor Ort generiert.
 
+**Lokal (PowerShell):**
 ```powershell
 .\update-version.ps1
+```
+
+**Lokal (Unix):**
+```bash
+chmod +x update-version.sh && ./update-version.sh
+```
+
+**Render (Build Command in den Render-Dashboard-Einstellungen setzen):**
+```bash
+git log -1 --format="const BUILD_VERSION = '%h %cd';" --date=format:%Y-%m-%d > version.js
 ```
