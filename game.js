@@ -262,7 +262,7 @@ let questBlocks = [], powerups = [], pipes = [], checkpoints = [], powerUpPopups
 let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0;
 let cheatInfiniteLives = false, cheatImmortal = false, cheatUnlockAll = false;
 let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
-const LEVEL_TIME_LIMIT = 180 * 60;
+const LEVEL_TIME_LIMIT = 250 * 60;
 let levelTimer = LEVEL_TIME_LIMIT;
 let biome = BIOME.MEADOW, biomeTrans = 0;
 let countdown = 0, pendingLevel = 0, pendingSeed = 0;
