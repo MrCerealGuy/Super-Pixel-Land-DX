@@ -3136,6 +3136,7 @@ document.getElementById('hsText').textContent = highScore > 0 ? 'HIGHSCORE: '+hi
 updateContinueBtn();
 document.getElementById('buildVersion').textContent = (typeof BUILD_VERSION !== 'undefined' ? BUILD_VERSION : '');
 goFullscreen();
+document.getElementById('startScreen').addEventListener('click', goFullscreen);
 
 buildLevel();
 gameLoop();
