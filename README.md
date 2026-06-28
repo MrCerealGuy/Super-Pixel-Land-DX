@@ -192,7 +192,7 @@ Auf dem Startbildschirm unten rechts wird die aktuelle Commit-ID + Datum angezei
 chmod +x update-version.sh && ./update-version.sh
 ```
 
-**Render (Build Command in den Render-Dashboard-Einstellungen setzen):**
+**Render (Build Command im Render-Dashboard – bestehendes `npm install` ergänzen):**
 ```bash
-git log -1 --format="const BUILD_VERSION = '%h %cd';" --date=format:%Y-%m-%d > version.js
+git log -1 --format="const BUILD_VERSION = '%h %cd';" --date=format:%Y-%m-%d > version.js && npm install
 ```
