@@ -322,6 +322,7 @@ function sfxStomp() { playBeep(200,0.15,'square',0.07); }
 function sfxDie() { playBeep(300,0.1,'square',0.07); setTimeout(()=>playBeep(200,0.15,'square',0.06),100); setTimeout(()=>playBeep(100,0.2,'square',0.05),250); }
 function sfxPowerUp() { playBeep(660,0.08,'square',0.06); setTimeout(()=>playBeep(880,0.08,'square',0.06),80); setTimeout(()=>playBeep(1100,0.12,'square',0.06),160); }
 function sfxBlock() { playBeep(300,0.05,'square',0.04); }
+function sfxTimerWarn() { playBeep(880,0.1,'square',0.08); }
 function sfxStar() { playBeep(880,0.08,'square',0.05); setTimeout(()=>playBeep(1100,0.08,'square',0.05),80); setTimeout(()=>playBeep(1320,0.08,'square',0.05),160); setTimeout(()=>playBeep(1760,0.15,'square',0.05),240); }
 function sfxHit() { playBeep(200,0.12,'square',0.07); }
 function sfxFire() { playBeep(1200,0.05,'square',0.04); playBeep(800,0.06,'square',0.03); }
@@ -1045,7 +1046,7 @@ function update() {
           else { document.getElementById('mpGameOverMsg').classList.remove('hidden'); document.getElementById('restartBtn').style.display = 'none'; }
         }
       } else if (levelTimer <= 1800 && levelTimer % 60 === 0) {
-        sfxBlock();
+        sfxTimerWarn();
       }
     }
   }
