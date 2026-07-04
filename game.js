@@ -267,7 +267,7 @@ let levelTimer = LEVEL_TIME_LIMIT;
 let biome = BIOME.MEADOW, biomeTrans = 0;
 let countdown = 0, pendingLevel = 0, pendingSeed = 0;
 let comboCount = 0, comboTimer = 0;
-let killstreakCount = 0, killstreakWindow = 0, killstreakTimer = 0, killstreakPopup = 0;
+let killstreakCount = 0, killstreakWindow = 0, killstreakTimer = 0, killstreakPopup = 0, killstreakCooldown = 0;
 let lastEnemySpawnX = 0, levelGaps = [];
 let goalFlag = null;
 let inBonusRoom = false, bonusCoins = [], bonusBlocks = [], bonusRoomPipe = null, bonusRoomTimer = 0, bonusExitCooldown = 0;
@@ -783,7 +783,7 @@ function enterBonusRoom(pipe) {
   bonusRoomPipe = pipe;
   if (mp.connected) mpSendEvent('bonus_room', { inBonusRoom: true, senderId: mp.id });
   stopKillstreakMusic();
-  killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0;
+  killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0; killstreakCooldown=0;
   // Place player safely away from exit pipe
   player.x = 5;
   player.y = H - player.h - 1;
@@ -857,7 +857,9 @@ function onEnemyKill() {
   killstreakWindow = 300;
   if (killstreakCount >= 3) {
     killstreakCount = 0;
-    if (killstreakTimer <= 0) {
+    if (killstreakCooldown > 0) {
+      // On cooldown — activation blocked
+    } else if (killstreakTimer <= 0) {
       killstreakTimer = 600;
       killstreakPopup = 50;
       startKillstreakMusic();
@@ -871,7 +873,7 @@ function resetGame() {
   stopStarMusic(); stopKillstreakMusic();
   score=0; coinCount=0; distance=0; camera.x=0;
   gameOver=false; screenShake=0; gameRunning=true; levelTimer=LEVEL_TIME_LIMIT;
-  comboCount=0; comboTimer=0; killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0;
+  comboCount=0; comboTimer=0;   killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0; killstreakCooldown=0; killstreakCooldown=0;
   lastEnemySpawnX=0; inBonusRoom=false; bonusRoomPipe=null; bonusCoins=[]; bonusBlocks=[]; bonusExitCooldown=0;
   fireballs=[];
   buildLevel(currentLevel); resetPlayer(); powerUpPopups=[];
@@ -1148,10 +1150,12 @@ function update() {
       ksOsc.frequency.value = notes[idx];
       ksGain.gain.value = (killstreakTimer % 10 < 5) ? 0.025 : 0;
     }
-    if (killstreakTimer<=0) stopKillstreakMusic();
+    if (killstreakTimer<=0) { stopKillstreakMusic(); killstreakCooldown=1200; }
   } else if (ksOsc) {
     stopKillstreakMusic();
   }
+  // Killstreak cooldown
+  if (killstreakCooldown>0) killstreakCooldown--;
 
   // Player input
   if (keys.left) { p.vx=-MOVE_SPEED; p.facing=-1; }
@@ -1552,7 +1556,7 @@ function playerDie(fromPit) {
   if (player.dead || player.invTimer>0) return;
   stopStarMusic();
   stopKillstreakMusic();
-  killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0;
+  killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0; killstreakCooldown=0;
   // Immortal cheat: only pit kills, no enemy damage
   if (cheatImmortal && !fromPit) {
     player.invTimer=20; sfxHit(); screenShake=2;
@@ -2479,8 +2483,8 @@ function draw() {
   }
 
   // Killstreak timer bar
+  const bw = 45;
   if (killstreakTimer > 0 && gameScreen === 'playing' && !inBonusRoom) {
-    const bw = 45;
     ctx.fillStyle = COL.ground;
     ctx.fillRect(2, 2, bw, 6);
     ctx.fillStyle = COL.red;
@@ -2488,6 +2492,16 @@ function draw() {
     ctx.fillStyle = COL.darkest;
     ctx.fillRect(2, 2, bw, 1); ctx.fillRect(2, 2, 1, 6);
     drawPixelText('2X', 4, 10, COL.red);
+  }
+  // Killstreak cooldown bar
+  if (killstreakCooldown > 0 && gameScreen === 'playing' && !inBonusRoom) {
+    ctx.fillStyle = COL.dark;
+    ctx.fillRect(2, 2, bw, 6);
+    ctx.fillStyle = COL.ground;
+    ctx.fillRect(2, 2, bw * (killstreakCooldown / 1200), 6);
+    ctx.fillStyle = COL.darkest;
+    ctx.fillRect(2, 2, bw, 1); ctx.fillRect(2, 2, 1, 6);
+    drawPixelText('CD', 4, 10, COL.ground);
   }
 
   // Biome transition overlay
