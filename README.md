@@ -53,6 +53,7 @@ Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum
 - 3 Gegner innerhalb von 5 Sekunden besiegen → aktiviert 10 Sekunden **doppelte Punkte**
 - Während der Killstreak: roter "2X"-Timer oben links, "KILLSTREAK"-Popup in der Mitte
 - 3 weitere Kills während der Killstreak verlängern diese
+- Nach Ablauf des Killstreaks: **20 Sekunden Abklingzeit** (grauer "CD"-Balken oben links)
 
 ### Bonus-Raum
 - Betreten über grüne Röhren (↓-Taste)
@@ -68,6 +69,16 @@ Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum
 ### Checkpoints
 - Alle 1000px platziert, automatisch bei Berührung aktiviert
 - Nach Tod wird am letzten aktivierten Checkpoint neu gestartet
+
+### Level-Timer
+- Jedes Level hat ein Zeitlimit von **250 Sekunden**
+- Anzeige oben rechts in der Statusleiste
+- Ab 30 Sekunden: Warnton und rote Einfärbung
+- Läuft die Zeit ab: sofortiger Game Over (wie alle Leben verloren)
+
+### Seltene Münz-Blöcke
+- Ca. 12 % aller Münz-Quest-Blöcke sind **10er-Blöcke**
+- Geben bis zu 10 Münzen, bevor sie sich leeren
 
 ### Röhren
 - Grüne Röhren, nach Verlassen nicht mehr begehbar
