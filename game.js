@@ -1595,7 +1595,7 @@ function playerDie(fromPit) {
       let cx = 20;
       for (const cp of checkpoints) { if (cp.reached && cp.x>cx) cx=cp.x+20; }
       player.x=cx; player.y=80; player.vy=0; player.vx=0;
-      player.dead=false; player.star=0;
+      player.dead=false; player.star=0; player.invTimer=120;
     },500);
   }
 }
