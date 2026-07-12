@@ -871,9 +871,9 @@ function onEnemyKill() {
 
 function resetGame() {
   stopStarMusic(); stopKillstreakMusic();
-  score=0; coinCount=0; distance=0; camera.x=0;
+  score=0; coinCount=0; distance=0; camera.x=0; lives=3;
   gameOver=false; screenShake=0; gameRunning=true; levelTimer=LEVEL_TIME_LIMIT;
-  comboCount=0; comboTimer=0;   killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0; killstreakCooldown=0; killstreakCooldown=0;
+  comboCount=0; comboTimer=0;   killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0; killstreakCooldown=0;
   lastEnemySpawnX=0; inBonusRoom=false; bonusRoomPipe=null; bonusCoins=[]; bonusBlocks=[]; bonusExitCooldown=0;
   fireballs=[];
   buildLevel(currentLevel); resetPlayer(); powerUpPopups=[];
