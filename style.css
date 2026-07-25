@@ -89,6 +89,7 @@ canvas { display: block; margin: 0 auto; image-rendering: pixelated; width: 100%
 #mpPlayerList .mp-me { border-color: #8bac0f; background: rgba(139,172,15,0.08); }
 #mpPlayerList .mp-me::before { content: '▶'; color: #8bac0f; font-size: 0.8em; }
 #mpLevelSelect { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+#mpModeSelect .btn { font-size: 0.85em; padding: 4px 12px; min-width: 120px; }
 #mpLevelSelect button { background: #306230; color: #9bbc0f; border: 2px solid #9bbc0f; font-size: 1em; padding: 4px 12px; border-radius: 6px; font-family: monospace; cursor: pointer; }
 #mpLevelSelect button:disabled { opacity: 0.35; cursor: default; border-color: #306230; color: #306230; background: #1a3a1a; }
 #mpLevelSelect span { color: #9bbc0f; font-size: 1.1em; text-shadow: 2px 2px 0 #306230; min-width: 80px; text-align: center; }

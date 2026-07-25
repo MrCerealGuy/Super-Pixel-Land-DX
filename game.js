@@ -269,7 +269,7 @@ let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
 const LEVEL_TIME_LIMIT = 250 * 60;
 let levelTimer = LEVEL_TIME_LIMIT;
 let biome = BIOME.MEADOW, biomeTrans = 0;
-let countdown = 0, pendingLevel = 0, pendingSeed = 0;
+let countdown = 0, pendingLevel = 0, pendingSeed = 0, pendingMode = 'pixelland';
 let comboCount = 0, comboTimer = 0;
 let killstreakCount = 0, killstreakWindow = 0, killstreakTimer = 0, killstreakPopup = 0, killstreakCooldown = 0;
 let lastEnemySpawnX = 0, levelGaps = [];
@@ -290,7 +290,7 @@ let mpConn = null;
 const mp = {
   connected: false, id: null, room: null, host: false,
   seed: null, prng: null, players: {}, localName: '',
-  lobbyLevel: 0, stateSeq: 0
+  lobbyLevel: 0, lobbyMode: 'pixelland', stateSeq: 0
 };
 function mpPRNG(s) {
   let a = s >>> 0;
@@ -1039,6 +1039,7 @@ function returnToMap() {
     document.getElementById('mpLobby').style.display = '';
     document.getElementById('mpJoin').style.display = 'none';
     updateMpPlayerList();
+    updateMpLobbyMode();
     return;
   }
   if (gameMode === 'hochhinaus') {
@@ -1079,7 +1080,7 @@ function update() {
   if (countdown > 0) {
     countdown--;
     if (countdown === 120 || countdown === 60) sfxBlock();
-    if (countdown === 0) { sfxPowerUp(); mpStartLevel(pendingLevel, pendingSeed); }
+    if (countdown === 0) { sfxPowerUp(); gameMode = pendingMode; mpStartLevel(pendingLevel, pendingSeed); }
     return;
   }
   if (!gameRunning || gameOver || gameScreen === 'mpLobby') return;
@@ -2912,7 +2913,9 @@ function mpHandleMessage(msg) {
       document.getElementById('mpLobby').style.display = '';
       document.getElementById('mpStartBtn').style.display = msg.host ? 'inline-block' : 'none';
       document.getElementById('mpStatus').textContent = 'Verbunden – Raum ' + msg.room;
+      mp.lobbyMode = msg.mode || 'pixelland';
       updateMpPlayerList();
+      updateMpLobbyMode();
       break;
     case 'player_joined':
       mp.players[msg.id] = { id: msg.id, name: msg.name, host: false };
@@ -2927,6 +2930,7 @@ function mpHandleMessage(msg) {
       document.getElementById('mpStartBtn').style.display = mp.host ? 'inline-block' : 'none';
       for (const pid in mp.players) mp.players[pid].host = (pid === msg.id);
       updateMpPlayerList();
+      updateMpLobbyMode();
       break;
     case 'player_states':
       if (gameScreen !== 'playing') break;
@@ -2947,6 +2951,7 @@ function mpHandleMessage(msg) {
       sfxBlock();
       pendingLevel = msg.level;
       pendingSeed = msg.seed;
+      pendingMode = msg.mode || 'pixelland';
       stopStarMusic();
       document.getElementById('gameOverScreen').classList.add('hidden');
       document.getElementById('mpGameOverMsg').classList.add('hidden');
@@ -2963,6 +2968,10 @@ function mpHandleMessage(msg) {
     case 'level_select':
       mp.lobbyLevel = msg.level;
       document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
+      break;
+    case 'mode_select':
+      mp.lobbyMode = msg.mode || 'pixelland';
+      updateMpLobbyMode();
       break;
     case 'force_leave':
       if (gameScreen === 'playing' || gameScreen === 'mpLobby') returnToMap();
@@ -3343,10 +3352,10 @@ document.getElementById('mpLeaveBtn').addEventListener('touchend', e=>{e.prevent
   document.getElementById('startScreen').classList.remove('hidden');
 });
 document.getElementById('mpStartBtn').addEventListener('click', ()=>{
-  if (mp.host && mp.connected) mpSend({ type: 'start_level', level: mp.lobbyLevel });
+  if (mp.host && mp.connected) mpSend({ type: 'start_level', level: mp.lobbyLevel, mode: mp.lobbyMode });
 });
 document.getElementById('mpStartBtn').addEventListener('touchend', e=>{e.preventDefault();
-  if (mp.host && mp.connected) mpSend({ type: 'start_level', level: mp.lobbyLevel });
+  if (mp.host && mp.connected) mpSend({ type: 'start_level', level: mp.lobbyLevel, mode: mp.lobbyMode });
 });
 document.getElementById('mpLevelPrev').addEventListener('click', ()=>{
   if (!mp.host) return;
@@ -3371,6 +3380,45 @@ document.getElementById('mpLevelNext').addEventListener('touchend', e=>{e.preven
   mp.lobbyLevel = (mp.lobbyLevel + 1) % levels.length;
   document.getElementById('mpLevelName').textContent = levels[mp.lobbyLevel].name;
   mpSend({ type: 'level_select', level: mp.lobbyLevel });
+});
+
+function updateMpLobbyMode() {
+  const label = document.getElementById('mpModeLabel');
+  const lvlSel = document.getElementById('mpLevelSelect');
+  if (mp.lobbyMode === 'hochhinaus') {
+    label.textContent = 'Modus: HOCH HINAUS';
+    lvlSel.style.display = 'none';
+  } else {
+    label.textContent = 'Modus: PIXEL-LAND';
+    lvlSel.style.display = '';
+  }
+  if (mp.host) {
+    document.getElementById('mpModePixelBtn').style.display = '';
+    document.getElementById('mpModeHochBtn').style.display = '';
+  } else {
+    document.getElementById('mpModePixelBtn').style.display = 'none';
+    document.getElementById('mpModeHochBtn').style.display = 'none';
+  }
+}
+document.getElementById('mpModePixelBtn').addEventListener('click', ()=>{
+  if (!mp.host) return;
+  mp.lobbyMode = 'pixelland'; updateMpLobbyMode();
+  mpSend({ type: 'mode_select', mode: 'pixelland' });
+});
+document.getElementById('mpModePixelBtn').addEventListener('touchend', e=>{e.preventDefault();
+  if (!mp.host) return;
+  mp.lobbyMode = 'pixelland'; updateMpLobbyMode();
+  mpSend({ type: 'mode_select', mode: 'pixelland' });
+});
+document.getElementById('mpModeHochBtn').addEventListener('click', ()=>{
+  if (!mp.host) return;
+  mp.lobbyMode = 'hochhinaus'; updateMpLobbyMode();
+  mpSend({ type: 'mode_select', mode: 'hochhinaus' });
+});
+document.getElementById('mpModeHochBtn').addEventListener('touchend', e=>{e.preventDefault();
+  if (!mp.host) return;
+  mp.lobbyMode = 'hochhinaus'; updateMpLobbyMode();
+  mpSend({ type: 'mode_select', mode: 'hochhinaus' });
 });
 
 function beendenSave() {

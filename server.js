@@ -109,6 +109,7 @@ wss.on('connection', (ws) => {
           name,
           room: code,
           host: isHost,
+          mode: room.mode || 'pixelland',
           players: room.players.map(p => ({ id: p.id, name: p.name, host: p.host }))
         }));
         break;
@@ -133,9 +134,10 @@ wss.on('connection', (ws) => {
         const room = rooms[ws._room];
         if (room.host !== ws) return;
         room.level = msg.level || 0;
+        room.mode = msg.mode || 'pixelland';
         room.playing = true;
         const seed = ((Date.now() & 0x7fffffff) ^ ((Math.random() * 0x7fffffff) | 0)) >>> 0;
-        broadcast(room, { type: 'level_start', level: room.level, seed });
+        broadcast(room, { type: 'level_start', level: room.level, mode: room.mode, seed });
         break;
       }
 
@@ -154,6 +156,15 @@ wss.on('connection', (ws) => {
         const room = rooms[ws._room];
         if (room.host !== ws) return;
         broadcast(room, { type: 'level_select', level: msg.level });
+        break;
+      }
+
+      case 'mode_select': {
+        if (!ws._room || !rooms[ws._room]) return;
+        const room = rooms[ws._room];
+        if (room.host !== ws) return;
+        room.mode = msg.mode || 'pixelland';
+        broadcast(room, { type: 'mode_select', mode: room.mode });
         break;
       }
 
