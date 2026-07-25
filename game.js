@@ -256,10 +256,14 @@ const BIOME = {
 };
 
 let fireballs = [];
-let camera = { x: 0 };
+let camera = { x: 0, y: 0 };
+let drawCy = 0;
 let platforms = [], coins = [], enemies = [], particles = [], movingPlats = [];
 let questBlocks = [], powerups = [], pipes = [], checkpoints = [], powerUpPopups = [];
 let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0;
+let gameMode = 'pixelland';
+const VERT_LEVEL_HEIGHT = 6000;
+let maxHeight = 0;
 let cheatInfiniteLives = false, cheatImmortal = false, cheatUnlockAll = false;
 let gameRunning = false, gameOver = false, screenShake = 0, animTick = 0;
 const LEVEL_TIME_LIMIT = 250 * 60;
@@ -488,7 +492,7 @@ function buildLevel(levelIndex) {
       const ok = !platforms.some(p=>p.type==='platform'&&(
         rectCollide(check,p)||rectCollide(check2,p)||rectCollide(check3,p)||
         vertTooClose(check,p,30)||vertTooClose(check2,p,30)||vertTooClose(check3,p,30)));
-      if (ok) { const _sp=Math.random()*Math.PI*2;movingPlats.push({x:cfg.x,y,w:32,h:6,startX:cfg.x,endX:cfg.endX,speed:0.8+rand(0,0.4),_startPhase:_sp,_startTime:Date.now()});break;}
+      if (ok) { const _sp=Math.random()*Math.PI*2;movingPlats.push({x:cfg.x,y,w:32,h:6,moving:true,startX:cfg.x,endX:cfg.endX,speed:0.8+rand(0,0.4),_startPhase:_sp,_startTime:Date.now()});break;}
     }
   }
 
@@ -714,6 +718,109 @@ function addPlats(arr) {
   for (const p of arr) platforms.push({x:p[0], y:p[1], w:p[2], h:p[3], type:'platform'});
 }
 
+function buildVerticalLevel() {
+  platforms=[]; coins=[]; enemies=[]; particles=[]; movingPlats=[];
+  questBlocks=[]; powerups=[]; pipes=[]; checkpoints=[]; fireballs=[]; mpResults.length = 0;
+  biome = BIOME.MEADOW;
+  goalFlag = null;
+  maxHeight = 0;
+  const VH = VERT_LEVEL_HEIGHT;
+  const pw = W;
+
+  // Ground floor
+  for (let x=0; x<pw; x+=16) {
+    platforms.push({x, y:H-16, w:16, h:16, type:'ground'});
+  }
+
+  // Generate floors going upward
+  const floorSpacing = 48;
+  const numFloors = Math.floor(VH / floorSpacing);
+  for (let f=1; f<numFloors; f++) {
+    const fy = H - 16 - f * floorSpacing;
+    const difficulty = Math.min(f / numFloors, 1);
+
+    // Fixed platforms: narrow, 1-2 per floor
+    const numFixed = 1 + (Math.random() < 0.4 ? 1 : 0);
+    const minW = Math.max(16, 32 - difficulty * 10);
+    const maxW = Math.max(16, 32 - difficulty * 8);
+    const used = [];
+    for (let n=0; n<numFixed; n++) {
+      for (let t=0; t<50; t++) {
+        const w = randInt(Math.floor(minW/16), Math.floor(maxW/16)) * 16;
+        const x = randInt(0, Math.floor((pw - w) / 16)) * 16;
+        if (used.some(u => Math.abs(u - x) < w + 8)) continue;
+        platforms.push({x, y:fy, w, h:8, type:'platform'});
+        used.push(x);
+        break;
+      }
+    }
+
+    // Moving platforms: every 2-3 floors, 1-2 per floor
+    if (f > 1 && (f % 2 === 0 || f % 3 === 0)) {
+      const numMoving = 1 + (Math.random() < 0.3 + difficulty * 0.2 ? 1 : 0);
+      for (let m=0; m<numMoving; m++) {
+        for (let t=0; t<30; t++) {
+          const mw = 16 + randInt(0, 2) * 16;
+          const mx = randInt(10, pw - mw - 10);
+          if (used.some(u => Math.abs(u - mx) < mw + 16)) continue;
+          const range = 30 + difficulty * 30;
+          movingPlats.push({
+            x:mx, y:fy, w:mw, h:6, moving:true,
+            startX: mx, endX: mx,
+            startY: fy - range, endY: fy + range,
+            speed: 0.5 + difficulty * 0.5,
+            _startPhase: Math.random() * Math.PI * 2,
+            _startTime: Date.now()
+          });
+          used.push(mx);
+          break;
+        }
+      }
+    }
+
+    // Coins above platforms
+    if (f % 3 === 0 && used.length > 0) {
+      const cx = used[0] + randInt(2, 16);
+      coins.push({x:cx, y:fy - 16, w:6, h:8, collected:false});
+    }
+
+    // Flying enemies (from floor 3, increasing density)
+    if (f > 2 && Math.random() < 0.25 + difficulty * 0.35) {
+      const count = 1 + (difficulty > 0.5 && Math.random() < 0.3 ? 1 : 0);
+      for (let e = 0; e < count; e++) {
+        enemies.push({x:randInt(10, pw - 30), y:fy - 20 - randInt(5,25), w:12, h:12, vx: (Math.random() < 0.5 ? -1 : 1) * (0.4 + Math.random() * 0.4), vy:0, type:'flying', alive:true, hp:1, frame:0, flyOff:0, flyPhase: Math.random()*Math.PI*2});
+      }
+    }
+
+    // Powerup/coin drops directly (no question blocks in Hoch hinaus)
+    if (f % 5 === 0 && used.length > 0) {
+      const bx = used[0] + 10;
+      if (Math.random() < 0.6) {
+        coins.push({x:bx, y:fy - 16, w:6, h:8, collected:false});
+      } else if (Math.random() < 0.5) {
+        powerups.push({x:bx, y:fy - 16, w:8, h:8, type:'mushroom', vx:1.2, vy:-6, bounce:6, collected:false});
+      } else {
+        powerups.push({x:bx, y:fy - 16, w:8, h:8, type:'star', vx:1.2, vy:-6, bounce:6, collected:false});
+      }
+    }
+
+    // Checkpoints every 20 floors
+    if (f % 20 === 0 && used.length > 0) {
+      checkpoints.push({x:used[0] + 4, y:fy - 8, w:8, h:16, reached:false});
+    }
+
+  }
+
+  // Add moving platform rects as passable platforms
+  for (const mp of movingPlats) platforms.push(mp);
+
+  // Multiplayer object IDs
+  for (let i=0; i<coins.length; i++) coins[i]._id='c'+i;
+  for (let i=0; i<enemies.length; i++) enemies[i]._id='e'+i;
+  for (let i=0; i<questBlocks.length; i++) questBlocks[i]._id='q'+i;
+  for (let i=0; i<checkpoints.length; i++) checkpoints[i]._id='cp'+i;
+}
+
 function getBiomeAt(x) {
   // Use the level's biome for the first section
   if (x < 800) return levels[currentLevel].biome;
@@ -846,7 +953,12 @@ function rectCollide(a,b) {
 }
 
 function resetPlayer() {
-  player.x=20; player.y=100; player.vx=0; player.vy=0;
+  if (gameMode === 'hochhinaus') {
+    player.x=W/2-5; player.y=H-16-player.h;
+  } else {
+    player.x=20; player.y=100;
+  }
+  player.vx=0; player.vy=0;
   player.onGround=false; player.dead=false; player.won=false;
   player.facing=1; player.frame=0; player.big=false; player.star=0; player.invTimer=0; player.shoot=false;
   player.canDoubleJump=true; player.w=10; player.h=14;
@@ -871,12 +983,18 @@ function onEnemyKill() {
 
 function resetGame() {
   stopStarMusic(); stopKillstreakMusic();
-  score=0; coinCount=0; distance=0; camera.x=0; lives=3;
+  score=0; coinCount=0; distance=0; camera.x=0; camera.y=0; lives=3;
   gameOver=false; screenShake=0; gameRunning=true; levelTimer=LEVEL_TIME_LIMIT;
   comboCount=0; comboTimer=0;   killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0; killstreakCooldown=0;
   lastEnemySpawnX=0; inBonusRoom=false; bonusRoomPipe=null; bonusCoins=[]; bonusBlocks=[]; bonusExitCooldown=0;
-  fireballs=[];
-  buildLevel(currentLevel); resetPlayer(); powerUpPopups=[];
+  fireballs=[]; maxHeight=0;
+  if (gameMode === 'hochhinaus') buildVerticalLevel(); else buildLevel(currentLevel);
+  resetPlayer(); powerUpPopups=[];
+  if (gameMode === 'hochhinaus') {
+    document.getElementById('timerDisplay').parentElement.innerHTML = 'HÖHE <span id="timerDisplay">0m</span>';
+  } else {
+    document.getElementById('timerDisplay').parentElement.innerHTML = 'ZEIT <span id="timerDisplay">250</span>';
+  }
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.add('hidden');
 }
@@ -903,6 +1021,7 @@ function returnToMap() {
   document.getElementById('enterBtn').style.display='none';
   document.getElementById('fireBtn').style.display='none';
   document.getElementById('controls').style.display='flex';
+  document.getElementById('timerDisplay').parentElement.innerHTML = 'ZEIT <span id="timerDisplay">250</span>';
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('mpGameOverMsg').classList.add('hidden');
   document.getElementById('mpResultScreen').classList.add('hidden');
@@ -920,6 +1039,13 @@ function returnToMap() {
     document.getElementById('mpLobby').style.display = '';
     document.getElementById('mpJoin').style.display = 'none';
     updateMpPlayerList();
+    return;
+  }
+  if (gameMode === 'hochhinaus') {
+    gameMode = 'pixelland';
+    gameScreen = 'start'; gameRunning = false;
+    document.getElementById('timerDisplay').parentElement.innerHTML = 'ZEIT <span id="timerDisplay">250</span>';
+    document.getElementById('startScreen').classList.remove('hidden');
     return;
   }
   gameScreen = 'map'; gameRunning = true;
@@ -1030,7 +1156,7 @@ function update() {
   }
 
   // ---- Level Timer ----
-  if (gameScreen === 'playing' && !gameOver && gameRunning) {
+  if (gameMode === 'pixelland' && gameScreen === 'playing' && !gameOver && gameRunning) {
     if (levelTimer > 0) {
       levelTimer--;
       if (levelTimer <= 0 && !player.dead && !player.won) {
@@ -1055,10 +1181,15 @@ function update() {
   // UI updates (before bonus room return so coin/score/timer stay live)
   document.getElementById('scoreDisplay').textContent = String(score).padStart(6, '0');
   document.getElementById('coinsDisplay').textContent = String(coinCount).padStart(2, '0');
-  const secs = Math.max(0, Math.ceil(levelTimer / 60));
-  const td = document.getElementById('timerDisplay');
-  td.textContent = String(secs);
-  td.className = secs <= 30 ? 'low' : '';
+  if (gameMode === 'pixelland') {
+    const secs = Math.max(0, Math.ceil(levelTimer / 60));
+    const td = document.getElementById('timerDisplay');
+    td.textContent = String(secs);
+    td.className = secs <= 30 ? 'low' : '';
+  } else {
+    document.getElementById('timerDisplay').textContent = maxHeight + 'm';
+    document.getElementById('timerDisplay').className = '';
+  }
 
   // ---- Bonus Room ----
   if (inBonusRoom) {
@@ -1195,8 +1326,13 @@ function update() {
 
   // Move horizontally
   p.x+=p.vx;
+  if (gameMode === 'hochhinaus') {
+    if (p.x < 0) p.x = 0;
+    if (p.x > W - p.w) p.x = W - p.w;
+  }
   const pRect={x:p.x, y:p.y, w:p.w, h:p.h};
   for (const plat of platforms) {
+    if (plat.moving) continue;
     if (!rectCollide(pRect,plat)) continue;
     if (p.vx>0) p.x=plat.x-p.w;
     else if (p.vx<0) p.x=plat.x+plat.w;
@@ -1221,7 +1357,7 @@ function update() {
   for (const plat of platforms) {
     if (!rectCollide(pRect2,plat)) continue;
     if (p.vy>0) { p.y=plat.y-p.h; p.onGround=true; p.canDoubleJump=true; p.vy=0; }
-    else if (p.vy<0) { p.y=plat.y+plat.h; p.vy=0; }
+    else if (p.vy<0 && !plat.moving) { p.y=plat.y+plat.h; p.vy=0; }
   }
   for (const pipe of pipes) {
     const pr={x:pipe.x,y:pipe.y,w:pipe.w,h:pipe.h};
@@ -1260,6 +1396,25 @@ function update() {
     }
   }
 
+  // ---- Player bounce (Hoch hinaus multiplayer) ----
+  if (gameMode === 'hochhinaus' && mp.connected && !p.dead) {
+    for (const pid in mp.players) {
+      const rp = mp.players[pid];
+      if (!rp || rp.dead || rp.x == null || rp.inBonusRoom) continue;
+      if (rp._bounceCd > 0) { rp._bounceCd--; continue; }
+      const dx = (p.x + p.w/2) - (rp.x + 5);
+      const dy = (p.y + p.h/2) - (rp.y + 7);
+      if (Math.abs(dx) > 14 || Math.abs(dy) > 20) continue;
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 16) {
+        const pushX = dx < 0 ? -2 : 2;
+        const pushY = dy < 0 ? -3 : 3;
+        p.vx += pushX; p.vy += pushY;
+        rp._bounceCd = 15;
+        mpSendEvent('player_bounce', {vx: -pushX, vy: -pushY});
+      }
+    }
+  }
+
   // Animation frames
   if (Math.abs(p.vx)>0.3 && p.onGround) {
     p.frameTimer++;
@@ -1268,16 +1423,35 @@ function update() {
   else { p.frame=1; } // arms up while jumping
 
   // Camera
-  const targetCam=p.x-40;
-  camera.x+=(targetCam-camera.x)*0.1;
-  if (camera.x<0) camera.x=0;
+  if (gameMode === 'hochhinaus') {
+    const targetCamY = p.y - H/2;
+    camera.y += (targetCamY - camera.y) * 0.1;
+    if (camera.y > 0) camera.y = 0;
+    // Track height
+    const curH = Math.floor(Math.max(0, (H - 16 - p.y) / 8));
+    if (curH > maxHeight) { maxHeight = curH; score = maxHeight * 10; }
+  } else {
+    const targetCam=p.x-40;
+    camera.x+=(targetCam-camera.x)*0.1;
+    if (camera.x<0) camera.x=0;
+  }
 
   // Distance
   if (p.x>distance) distance=Math.floor(p.x);
 
   // Biome
-  const newBiome=getBiomeAt(p.x);
-  if (newBiome!==biome) { biome=newBiome; biomeTrans=30; }
+  if (gameMode === 'hochhinaus') {
+    const heightRatio = Math.min(Math.max(0, -p.y / (VERT_LEVEL_HEIGHT - H)), 1);
+    let newBiome;
+    if (heightRatio < 0.3) newBiome = BIOME.MEADOW;
+    else if (heightRatio < 0.6) newBiome = BIOME.CAVE;
+    else if (heightRatio < 0.85) newBiome = BIOME.SKY;
+    else newBiome = BIOME.VOLCANO;
+    if (newBiome !== biome) { biome = newBiome; biomeTrans = 30; }
+  } else {
+    const newBiome=getBiomeAt(p.x);
+    if (newBiome!==biome) { biome=newBiome; biomeTrans=30; }
+  }
   if (biomeTrans>0) biomeTrans--;
 
   // ---- Checkpoints ----
@@ -1290,18 +1464,28 @@ function update() {
 
   // ---- Moving Platforms ----
   for (const mp of movingPlats) {
-    const oldX=mp.x;
     const _elapsed=(Date.now()-mp._startTime)/1000;
-    mp.x = mp.startX + (Math.sin(mp._startPhase+mp.speed*1.2*_elapsed)+1)/2 * (mp.endX-mp.startX);
-    const dx=mp.x-oldX;
-    for (const plat of platforms) { if (plat===mp) plat.x=mp.x; }
-    if (p.x+p.w>mp.x && p.x<mp.x+mp.w && p.y+p.h>=mp.y-2 && p.y+p.h<=mp.y+4) {
-      p.x+=dx;
+    if (gameMode === 'hochhinaus' && mp.startY !== undefined) {
+      const oldY=mp.y;
+      mp.y = mp.startY + (Math.sin(mp._startPhase+mp.speed*1.2*_elapsed)+1)/2 * (mp.endY-mp.startY);
+      const dy=mp.y-oldY;
+      for (const plat of platforms) { if (plat===mp) plat.y=mp.y; }
+      if (p.x+p.w>mp.x && p.x<mp.x+mp.w && p.y+p.h>=oldY-2 && p.y+p.h<=oldY+4) {
+        p.y+=dy;
+      }
+    } else {
+      const oldX=mp.x;
+      mp.x = mp.startX + (Math.sin(mp._startPhase+mp.speed*1.2*_elapsed)+1)/2 * (mp.endX-mp.startX);
+      const dx=mp.x-oldX;
+      for (const plat of platforms) { if (plat===mp) plat.x=mp.x; }
+      if (p.x+p.w>oldX && p.x<oldX+mp.w && p.y+p.h>=mp.y-2 && p.y+p.h<=mp.y+4) {
+        p.x+=dx;
+      }
     }
   }
 
-  // ---- Periodic enemy spawn ahead ----
-  if (p.x > lastEnemySpawnX + 400 && p.x < L - 20) {
+  // ---- Periodic enemy spawn ahead (pixelland only) ----
+  if (gameMode === 'pixelland' && p.x > lastEnemySpawnX + 400 && p.x < L - 20) {
     lastEnemySpawnX = Math.floor(p.x / 400) * 400;
     const startX = lastEnemySpawnX + 200;
     const endX = startX + 300;
@@ -1341,7 +1525,7 @@ function update() {
   for (let i=powerups.length-1; i>=0; i--) {
     const pu=powerups[i];
     if (pu.type==='mushroom' || pu.type==='fire' || pu.type==='star') {
-      pu.x+=pu.vx || 0;
+      if (!(gameMode==='hochhinaus' && pu.type==='mushroom')) pu.x+=pu.vx || 0;
       pu.vy+=GRAV*0.7;
       pu.y+=pu.vy;
       // Collide with platforms
@@ -1385,6 +1569,10 @@ function update() {
     if (e.vy>MAX_FALL) e.vy=MAX_FALL;
     e.x+=e.vx;
     const eRect={x:e.x, y:e.y+(e.type==='flying'?e.flyOff:0), w:e.w, h:e.h};
+    if (e.type==='flying') {
+      if (e.x < 10) { e.x = 10; e.vx = Math.abs(e.vx); }
+      else if (e.x > W - e.w - 10) { e.x = W - e.w - 10; e.vx = -Math.abs(e.vx); }
+    }
     for (const plat of platforms) {
       if (!rectCollide(eRect,plat) || e.type==='flying') continue;
       if (e.vx>0) { e.x=plat.x-e.w; e.vx*=-1; }
@@ -1400,7 +1588,12 @@ function update() {
       }
     }
     if (e.y>H+30) { e.alive=false; continue; }
-    if (e.x < camera.x - 200) { e.alive=false; continue; }
+    if (gameMode === 'hochhinaus') {
+      if (e.y > camera.y + H + 200) { e.alive=false; continue; }
+      if (e.x < -200 || e.x > W + 200) { e.alive=false; continue; }
+    } else {
+      if (e.x < camera.x - 200) { e.alive=false; continue; }
+    }
 
     e.frame=Math.floor(animTick/12)%2;
 
@@ -1488,10 +1681,14 @@ function update() {
   }
 
   // Fall off
-  if (p.y>H) { if (!p.dead) playerDie(true); }
+  if (gameMode === 'hochhinaus') {
+    if (p.y>H+50 && !p.dead) playerDie(true);
+  } else {
+    if (p.y>H) { if (!p.dead) playerDie(true); }
+  }
 
-  // Win — flagpole
-  if (goalFlag && !goalFlag.reached && !p.won) {
+  // Win — flagpole (pixelland only)
+  if (gameMode === 'pixelland' && goalFlag && !goalFlag.reached && !p.won) {
     if (p.x + p.w > goalFlag.x && p.x < goalFlag.x + goalFlag.w &&
         p.y + p.h > goalFlag.y && p.y < goalFlag.y + goalFlag.h) {
       goalFlag.reached = true;
@@ -1506,7 +1703,7 @@ function update() {
       sfxFlagpole();
     }
   }
-  if (p.x > 10100) { playerWins(1000); }
+  if (gameMode === 'pixelland' && p.x > 10100) { playerWins(1000); }
 
   // Particles
   for (let i=particles.length-1; i>=0; i--) {
@@ -1581,7 +1778,11 @@ function playerDie(fromPit) {
     gameRunning=false; gameOver=true;
     document.getElementById('finalScore').textContent='PUNKTE: '+score;
     document.getElementById('finalCoins').textContent='MUNZEN: '+coinCount;
-    document.getElementById('finalDist').textContent='STRECKE: '+distance+'m';
+    if (gameMode === 'hochhinaus') {
+      document.getElementById('finalDist').textContent='HÖHE: '+maxHeight+'m';
+    } else {
+      document.getElementById('finalDist').textContent='STRECKE: '+distance+'m';
+    }
     if (score>highScore) { highScore=score; saveHighScore(); document.getElementById('finalHS').textContent='NEUER HIGHSCORE!'; }
     else document.getElementById('finalHS').textContent='HIGHSCORE: '+highScore;
     document.getElementById('gameOverScreen').classList.remove('hidden');
@@ -1592,9 +1793,17 @@ function playerDie(fromPit) {
   } else {
     // Respawn at last checkpoint or start
     setTimeout(()=>{
-      let cx = 20;
-      for (const cp of checkpoints) { if (cp.reached && cp.x>cx) cx=cp.x+20; }
-      player.x=cx; player.y=80; player.vy=0; player.vx=0;
+      if (gameMode === 'hochhinaus') {
+        let ry = H - 16 - player.h;
+        let rx = W/2 - player.w/2;
+        for (const cp of checkpoints) { if (cp.reached) { ry = cp.y - player.h; rx = cp.x - 10; } }
+        player.x=rx; player.y=ry;
+      } else {
+        let cx = 20;
+        for (const cp of checkpoints) { if (cp.reached && cp.x>cx) cx=cp.x+20; }
+        player.x=cx; player.y=80;
+      }
+      player.vy=0; player.vx=0;
       player.dead=false; player.star=0; player.invTimer=120;
     },500);
   }
@@ -1670,7 +1879,27 @@ function drawBackground() {
   const cx=Math.floor(camera.x);
 
   // Background hills
-  if (biome===BIOME.MEADOW || biome===BIOME.SKY) {
+  if (gameMode === 'hochhinaus') {
+    // Vertical mode: sky gradient shifts with camera
+    const skyShift = Math.min(Math.abs(camera.y) * 0.005, 30);
+    const hillColor = '#4a7a2a';
+    for (let i=0; i<6; i++) {
+      const hx = (i*38)%(W+30) - 15;
+      const hy = H*0.7 + Math.sin(i*1.3)*4 + camera.y*0.04;
+      ctx.fillStyle=hillColor;
+      ctx.fillRect(hx,hy,8,4); ctx.fillRect(hx+1,hy-2,6,2); ctx.fillRect(hx+2,hy-4,4,2);
+    }
+    // Clouds
+    for (let i=0; i<4; i++) {
+      const cx2=(i*50+animTick*0.1)%(W+30)-15;
+      const cy2=20+Math.sin(i*1.5+animTick*0.008)*10-(camera.y*0.1)%H;
+      const cy2m=((cy2%H)+H)%H;
+      ctx.fillStyle=COL.cloud;
+      ctx.fillRect(cx2,cy2m+2,12,3);
+      ctx.fillStyle=COL.skyLight;
+      ctx.fillRect(cx2+2,cy2m,8,2);
+    }
+  } else if (biome===BIOME.MEADOW || biome===BIOME.SKY) {
     const hillColor = biome===BIOME.SKY ? '#5a7a2a' : '#4a7a2a';
     for (let i=0; i<6; i++) {
       const hx = (i*38 - cx*0.1)%(W+30) - 15;
@@ -1729,58 +1958,59 @@ function drawBackground() {
 
 function drawGround(plat, cx) {
   const dx=plat.x-cx;
+  const dy=plat.y-drawCy;
   if (biome===BIOME.VOLCANO) {
     ctx.fillStyle='#4a2828';
-    ctx.fillRect(dx,plat.y,plat.w,plat.h);
+    ctx.fillRect(dx,dy,plat.w,plat.h);
     ctx.fillStyle=COL.darkest;
-    ctx.fillRect(dx,plat.y,plat.w,2);
+    ctx.fillRect(dx,dy,plat.w,2);
     ctx.fillStyle='#6a3838';
-    ctx.fillRect(dx,plat.y,plat.w,3);
+    ctx.fillRect(dx,dy,plat.w,3);
     ctx.fillStyle=COL.darkest;
-    for (let gx=0; gx<plat.w; gx+=8) { ctx.fillRect(dx+gx,plat.y+6,1,1); ctx.fillRect(dx+gx+4,plat.y+10,1,1); }
-    // Lava cracks
+    for (let gx=0; gx<plat.w; gx+=8) { ctx.fillRect(dx+gx,dy+6,1,1); ctx.fillRect(dx+gx+4,dy+10,1,1); }
     if (Math.random()<0.01) {
       ctx.fillStyle='#d03020';
-      ctx.fillRect(dx+Math.floor(Math.random()*(plat.w-4)),plat.y-1,3,2);
+      ctx.fillRect(dx+Math.floor(Math.random()*(plat.w-4)),dy-1,3,2);
     }
   } else if (biome===BIOME.CAVE) {
     ctx.fillStyle=COL.caveStone;
-    ctx.fillRect(dx,plat.y,plat.w,plat.h);
+    ctx.fillRect(dx,dy,plat.w,plat.h);
     ctx.fillStyle=COL.darkest;
-    ctx.fillRect(dx,plat.y,plat.w,2);
+    ctx.fillRect(dx,dy,plat.w,2);
     ctx.fillStyle=COL.groundLight;
-    ctx.fillRect(dx,plat.y,plat.w,3);
+    ctx.fillRect(dx,dy,plat.w,3);
     ctx.fillStyle=COL.darkest;
-    for (let gx=0; gx<plat.w; gx+=8) { ctx.fillRect(dx+gx,plat.y+6,1,1); ctx.fillRect(dx+gx+4,plat.y+10,1,1); }
+    for (let gx=0; gx<plat.w; gx+=8) { ctx.fillRect(dx+gx,dy+6,1,1); ctx.fillRect(dx+gx+4,dy+10,1,1); }
   } else if (biome===BIOME.SKY) {
     ctx.fillStyle=COL.ground;
-    ctx.fillRect(dx,plat.y,plat.w,plat.h);
+    ctx.fillRect(dx,dy,plat.w,plat.h);
     ctx.fillStyle=COL.darkest;
-    ctx.fillRect(dx,plat.y,plat.w,2);
+    ctx.fillRect(dx,dy,plat.w,2);
     ctx.fillStyle=COL.groundLight;
-    ctx.fillRect(dx,plat.y,plat.w,3);
+    ctx.fillRect(dx,dy,plat.w,3);
     ctx.fillStyle=COL.darkest;
-    for (let gx=0; gx<plat.w; gx+=8) { ctx.fillRect(dx+gx,plat.y+6,1,1); ctx.fillRect(dx+gx+4,plat.y+10,1,1); }
+    for (let gx=0; gx<plat.w; gx+=8) { ctx.fillRect(dx+gx,dy+6,1,1); ctx.fillRect(dx+gx+4,dy+10,1,1); }
   } else {
-    ctx.fillStyle=COL.ground; ctx.fillRect(dx,plat.y,plat.w,plat.h);
-    ctx.fillStyle=COL.darkest; ctx.fillRect(dx,plat.y,plat.w,2);
-    ctx.fillStyle=COL.grass; ctx.fillRect(dx,plat.y,plat.w,3);
+    ctx.fillStyle=COL.ground; ctx.fillRect(dx,dy,plat.w,plat.h);
+    ctx.fillStyle=COL.darkest; ctx.fillRect(dx,dy,plat.w,2);
+    ctx.fillStyle=COL.grass; ctx.fillRect(dx,dy,plat.w,3);
     ctx.fillStyle=COL.darkest;
-    for (let gx=0; gx<plat.w; gx+=8) { ctx.fillRect(dx+gx,plat.y+6,1,1); ctx.fillRect(dx+gx+4,plat.y+10,1,1); }
+    for (let gx=0; gx<plat.w; gx+=8) { ctx.fillRect(dx+gx,dy+6,1,1); ctx.fillRect(dx+gx+4,dy+10,1,1); }
   }
 }
 
 function drawPlatform(plat,cx) {
   const dx=plat.x-cx;
-  if (plat.w===32 && plat.h===6) { // moving platform indicator
-    ctx.fillStyle=COL.ground; ctx.fillRect(dx,plat.y,plat.w,plat.h);
-    ctx.fillStyle=COL.grass; ctx.fillRect(dx,plat.y,plat.w,2);
-    ctx.fillStyle=COL.darkest; ctx.fillRect(dx,plat.y+2,1,plat.h-2); ctx.fillRect(dx+plat.w-1,plat.y+2,1,plat.h-2);
+  const dy=plat.y-drawCy;
+  if (plat.moving) {
+    ctx.fillStyle=COL.darkest; ctx.fillRect(dx,dy,plat.w,plat.h);
+    ctx.fillStyle=COL.light; ctx.fillRect(dx+1,dy+1,plat.w-2,plat.h-2);
+    ctx.fillStyle=COL.gbLight; ctx.fillRect(dx+1,dy+1,plat.w-2,1);
   } else {
-    ctx.fillStyle=COL.ground; ctx.fillRect(dx,plat.y,plat.w,plat.h);
-    ctx.fillStyle=COL.darkest; ctx.fillRect(dx,plat.y,plat.w,1);
-    ctx.fillStyle=COL.grass; ctx.fillRect(dx,plat.y,plat.w,2);
-    for (let bx=0; bx<plat.w; bx+=8) { ctx.fillStyle=COL.darkest; ctx.fillRect(dx+bx+2,plat.y+3,4,1); ctx.fillRect(dx+bx+4,plat.y+6,4,1); }
+    ctx.fillStyle=COL.ground; ctx.fillRect(dx,dy,plat.w,plat.h);
+    ctx.fillStyle=COL.darkest; ctx.fillRect(dx,dy,plat.w,1);
+    ctx.fillStyle=COL.grass; ctx.fillRect(dx,dy,plat.w,2);
+    for (let bx=0; bx<plat.w; bx+=8) { ctx.fillStyle=COL.darkest; ctx.fillRect(dx+bx+2,dy+3,4,1); ctx.fillRect(dx+bx+4,dy+6,4,1); }
   }
 }
 
@@ -1812,7 +2042,7 @@ function drawPlayer(px, py, facing, frame, onGround, big, star) {
 
 function drawEnemy(e,cx) {
   const dx=Math.round(e.x-cx);
-  const eY = Math.round(e.y+(e.type==='flying'?e.flyOff:0));
+  const eY = Math.round(e.y+(e.type==='flying'?e.flyOff:0)-drawCy);
   if (e.type==='ground') {
     drawSprite(SP.goomba, SP.goombaPal, dx, eY);
   } else if (e.type==='big') {
@@ -1836,11 +2066,12 @@ function drawEnemy(e,cx) {
 
 function drawCoin(c,cx,frame) {
   const dx=c.x-cx; if (dx>W+8||dx<-8) return;
+  const dy=c.y-drawCy;
   const wobble=Math.sin(frame*0.1)*1;
   const rot=Math.sin(frame*0.08);
   const scaleW=Math.max(2,Math.floor(4+rot*2));
   const ox=Math.floor((6-scaleW)/2);
-  const y=c.y+wobble;
+  const y=dy+wobble;
   // Outer ring
   ctx.fillStyle=COL.yellow;
   ctx.fillRect(dx+ox,y,scaleW,8);
@@ -1862,8 +2093,10 @@ function drawCoin(c,cx,frame) {
 
 function drawQuestBlock(qb,cx) {
   const dx=qb.x-cx; if (dx>W+16||dx<-16) return;
+  const dy=qb.y-drawCy;
+  if (dy>H+16||dy<-16) return;
   const bounce = qb.bounce||0;
-  const by = qb.y - Math.floor(bounce);
+  const by = dy - Math.floor(bounce);
   let cFill, cLight, cDark, cMark, cMarkHi, cMarkLo, cHit;
   if (biome===BIOME.CAVE) {
     cFill='#306230'; cLight='#8bac0f'; cDark='#0f380f';
@@ -1983,8 +2216,9 @@ function drawQuestBlock(qb,cx) {
 
 function drawPowerUp(pu,cx) {
   const dx=pu.x-cx; if (dx>W+16||dx<-16) return;
+  const dy=pu.y-drawCy;
   const bounce = pu.bounce||0;
-  const by = pu.y - Math.floor(bounce);
+  const by = dy - Math.floor(bounce);
   if (pu.type==='mushroom') {
     ctx.fillStyle=COL.redLight;
     ctx.fillRect(dx+1,by,6,3);
@@ -2010,48 +2244,47 @@ function drawPowerUp(pu,cx) {
 
 function drawPipe(pipe,cx) {
   const dx=pipe.x-cx; if (dx>W+24||dx<-24) return;
+  const dy=pipe.y-drawCy;
+  if (dy>H+24||dy<-24) return;
   const pCol = biome===BIOME.VOLCANO ? '#4a2020' : COL.pipeDark;
   const pHigh = biome===BIOME.VOLCANO ? '#6a3030' : COL.pipeLight;
   ctx.fillStyle=pCol;
-  ctx.fillRect(dx,pipe.y,pipe.w,pipe.h);
-  // Shading: dark sides, lighter center
+  ctx.fillRect(dx,dy,pipe.w,pipe.h);
   ctx.fillStyle=COL.darkest;
-  ctx.fillRect(dx,pipe.y,pipe.w,2);
-  ctx.fillRect(dx,pipe.y,3,pipe.h);
-  ctx.fillRect(dx+pipe.w-3,pipe.y,3,pipe.h);
-  // Pipe lip
-  ctx.fillRect(dx-2,pipe.y-4,pipe.w+4,4);
+  ctx.fillRect(dx,dy,pipe.w,2);
+  ctx.fillRect(dx,dy,3,pipe.h);
+  ctx.fillRect(dx+pipe.w-3,dy,3,pipe.h);
+  ctx.fillRect(dx-2,dy-4,pipe.w+4,4);
   ctx.fillStyle=pHigh;
-  ctx.fillRect(dx,pipe.y-4,pipe.w+2,2);
-  // Highlight stripe down center
+  ctx.fillRect(dx,dy-4,pipe.w+2,2);
   ctx.fillStyle=pHigh;
-  ctx.fillRect(dx+4,pipe.y+2,2,pipe.h-4);
-  ctx.fillRect(dx+pipe.w-6,pipe.y+2,2,pipe.h-4);
+  ctx.fillRect(dx+4,dy+2,2,pipe.h-4);
+  ctx.fillRect(dx+pipe.w-6,dy+2,2,pipe.h-4);
   ctx.fillStyle=COL.darkest;
-  ctx.fillRect(dx-2,pipe.y-4,pipe.w+4,1);
-  // "!" indicator for enterable pipes
+  ctx.fillRect(dx-2,dy-4,pipe.w+4,1);
   if (pipe.enterable) {
     ctx.fillStyle=COL.white;
-    ctx.fillRect(dx+pipe.w/2-2,pipe.y-10,4,2);
-    ctx.fillRect(dx+pipe.w/2-1,pipe.y-8,2,3);
-    ctx.fillRect(dx+pipe.w/2-2,pipe.y-4,4,2);
+    ctx.fillRect(dx+pipe.w/2-2,dy-10,4,2);
+    ctx.fillRect(dx+pipe.w/2-1,dy-8,2,3);
+    ctx.fillRect(dx+pipe.w/2-2,dy-4,4,2);
   }
 }
 
 function drawCheckpoint(cp,cx) {
   const dx=cp.x-cx; if (dx>W+16||dx<-16) return;
+  const dy=cp.y-drawCy;
+  if (dy>H+16||dy<-16) return;
   const poleColor = cp.reached ? COL.light : COL.dark;
   const flagColor = cp.reached ? COL.red : COL.darkest;
   ctx.fillStyle=poleColor;
-  ctx.fillRect(dx+2,cp.y-6,4,22);
+  ctx.fillRect(dx+2,dy-6,4,22);
   ctx.fillStyle=COL.darkest;
-  ctx.fillRect(dx+3,cp.y-6,2,22);
-  // Flag
+  ctx.fillRect(dx+3,dy-6,2,22);
   ctx.fillStyle=flagColor;
-  ctx.fillRect(dx+5,cp.y-4,6,6);
+  ctx.fillRect(dx+5,dy-4,6,6);
   if (cp.reached) {
     ctx.fillStyle=COL.light;
-    ctx.fillRect(dx+6,cp.y-3,4,2);
+    ctx.fillRect(dx+6,dy-3,4,2);
   }
 }
 
@@ -2310,6 +2543,7 @@ function draw() {
   drawBackground();
 
   const cx=Math.floor(camera.x);
+  drawCy = (gameMode === 'hochhinaus') ? Math.floor(camera.y) : 0;
 
   // Pipes
   for (const pipe of pipes) drawPipe(pipe,cx);
@@ -2317,7 +2551,9 @@ function draw() {
   // Ground and platforms
   for (const plat of platforms) {
     const dx=plat.x-cx;
+    const dy=plat.y-drawCy;
     if (dx>W+16||dx<-plat.w-16) continue;
+    if (dy>H+16||dy<-plat.h-16) continue;
     if (plat.type==='ground') drawGround(plat,cx);
     else drawPlatform(plat,cx);
   }
@@ -2326,7 +2562,7 @@ function draw() {
   for (const cp of checkpoints) drawCheckpoint(cp,cx);
 
   // Coins
-  for (const c of coins) { if (!c.collected) drawCoin(c,cx,animTick); }
+  for (const c of coins) { if (!c.collected) { const cy=c.y-drawCy; if (cy>-10&&cy<H+10) drawCoin(c,cx,animTick); } }
 
   // Question blocks
   for (const qb of questBlocks) drawQuestBlock(qb,cx);
@@ -2340,45 +2576,43 @@ function draw() {
   // Fireballs
   for (const fb of fireballs) {
     const dx = fb.x - cx;
+    const dy = fb.y - drawCy;
     ctx.fillStyle = COL.lava;
-    ctx.fillRect(dx, fb.y, fb.w, fb.h);
+    ctx.fillRect(dx, dy, fb.w, fb.h);
     ctx.fillStyle = COL.lavaGlow;
-    ctx.fillRect(dx + 1, fb.y + 1, 2, 2);
+    ctx.fillRect(dx + 1, dy + 1, 2, 2);
     ctx.fillStyle = COL.yellow;
-    ctx.fillRect(dx, fb.y, 2, 1);
+    ctx.fillRect(dx, dy, 2, 1);
   }
 
   // Flagpole
   if (goalFlag) {
     const gx=goalFlag.x-cx;
-    // Pole
+    const gfy=goalFlag.y-drawCy;
     ctx.fillStyle=COL.pipeDark;
-    ctx.fillRect(gx+1,goalFlag.y,2,goalFlag.h);
-    // Top ball
+    ctx.fillRect(gx+1,gfy,2,goalFlag.h);
     ctx.fillStyle=COL.star;
-    ctx.fillRect(gx,goalFlag.y-4,4,4);
+    ctx.fillRect(gx,gfy-4,4,4);
     ctx.fillStyle=COL.yellow;
-    ctx.fillRect(gx+1,goalFlag.y-3,2,2);
-    // Flag (near top, hangs to the right)
+    ctx.fillRect(gx+1,gfy-3,2,2);
     ctx.fillStyle=COL.red;
-    ctx.fillRect(gx+3,goalFlag.y+6,14,12);
+    ctx.fillRect(gx+3,gfy+6,14,12);
     ctx.fillStyle=COL.redLight;
-    ctx.fillRect(gx+5,goalFlag.y+8,10,3);
-    ctx.fillRect(gx+5,goalFlag.y+13,10,3);
-    // Flag star
+    ctx.fillRect(gx+5,gfy+8,10,3);
+    ctx.fillRect(gx+5,gfy+13,10,3);
     ctx.fillStyle=COL.star;
-    ctx.fillRect(gx+8,goalFlag.y+9,2,1);
-    ctx.fillRect(gx+10,goalFlag.y+10,2,2);
-    ctx.fillRect(gx+8,goalFlag.y+12,2,1);
+    ctx.fillRect(gx+8,gfy+9,2,1);
+    ctx.fillRect(gx+10,gfy+10,2,2);
+    ctx.fillRect(gx+8,gfy+12,2,1);
   }
 
   // Player
   if (!player.dead) {
-    drawPlayer(player.x-cx, player.y, player.facing, player.frame, player.onGround, player.big, player.star);
+    drawPlayer(player.x-cx, player.y-drawCy, player.facing, player.frame, player.onGround, player.big, player.star);
     if (mp.connected && mp.localName) {
       const n = 'P' + mp.localName.replace(/.*\s(\d+).*/, '$1');
       const tx = Math.round(player.x - cx - n.length * 2.5 + 6);
-      const ty = Math.round(player.y - 18);
+      const ty = Math.round(player.y - drawCy - 18);
       drawPixelText(n, tx, ty, COL.white);
     }
   }
@@ -2388,12 +2622,12 @@ function draw() {
       const rp = mp.players[pid];
       if (!rp || rp.dead || rp.x == null || rp.inBonusRoom) continue;
       ctx.globalAlpha = 0.8;
-      drawPlayer(rp.x - cx, rp.y, rp.facing || 1, rp.frame || 0, rp.onGround, rp.big || false, rp.star || 0);
+      drawPlayer(rp.x - cx, rp.y - drawCy, rp.facing || 1, rp.frame || 0, rp.onGround, rp.big || false, rp.star || 0);
       ctx.globalAlpha = 1;
       if (rp.name) {
         const n = 'P' + rp.name.replace(/.*\s(\d+).*/, '$1');
         const tx = Math.round(rp.x - cx - n.length * 2.5 + 6);
-        const ty = Math.round(rp.y - 18);
+        const ty = Math.round(rp.y - drawCy - 18);
         drawPixelText(n, tx, ty, COL.white);
       }
     }
@@ -2401,28 +2635,28 @@ function draw() {
 
   // Power-up popups
   for (const pop of powerUpPopups) {
-    const dx=pop.x-cx, dy=pop.y-Math.floor((50-pop.timer)*0.8), a=pop.timer/50;
+    const dx=pop.x-cx, pdy=pop.y-drawCy-Math.floor((50-pop.timer)*0.8), a=pop.timer/50;
     ctx.globalAlpha=a<0.3?a/0.3:1;
     ctx.fillStyle=COL.grass;
-    // Mini icon + label
     if (pop.type==='mushroom') {
-      ctx.fillStyle=COL.red; ctx.fillRect(dx+1,dy,4,3);
-      ctx.fillStyle=COL.grass; ctx.fillRect(dx+2,dy+3,2,3);
+      ctx.fillStyle=COL.red; ctx.fillRect(dx+1,pdy,4,3);
+      ctx.fillStyle=COL.grass; ctx.fillRect(dx+2,pdy+3,2,3);
     } else if (pop.type==='fire') {
-      ctx.fillStyle=COL.red; ctx.fillRect(dx+2,dy,2,2); ctx.fillRect(dx+1,dy+2,4,4);
-      ctx.fillStyle=COL.yellow; ctx.fillRect(dx+3,dy+2,2,2);
+      ctx.fillStyle=COL.red; ctx.fillRect(dx+2,pdy,2,2); ctx.fillRect(dx+1,pdy+2,4,4);
+      ctx.fillStyle=COL.yellow; ctx.fillRect(dx+3,pdy+2,2,2);
     } else if (pop.type==='star') {
-      drawSprite(SP.starSmall, SP.starSmallPal, dx+1, dy+1);
+      drawSprite(SP.starSmall, SP.starSmallPal, dx+1, pdy+1);
     }
-    drawPixelText(pop.label, dx+3-Math.floor(pop.label.length*3), dy+8, COL.grass);
+    drawPixelText(pop.label, dx+3-Math.floor(pop.label.length*3), pdy+8, COL.grass);
     ctx.globalAlpha=1;
   }
 
   // Particles
   for (const pt of particles) {
     const dx=pt.x-cx;
+    const dy=pt.y-drawCy;
     ctx.fillStyle=pt.color;
-    ctx.fillRect(dx,pt.y,pt.size,pt.size);
+    ctx.fillRect(dx,dy,pt.size,pt.size);
   }
 
   ctx.restore();
@@ -2615,21 +2849,19 @@ function mpStartLevel(level, seed) {
   cheatInfiniteLives = false; cheatImmortal = false; cheatUnlockAll = false;
   mp.seed = seed;
   mp.prng = mpPRNG(seed);
-  // Override Math.random globally so all direct calls inside buildLevel use the seeded PRNG
   const _origRandom = Math.random;
   Math.random = function() { return mp.prng(); };
   stopStarMusic(); stopKillstreakMusic();
-  score = 0; coinCount = 0; distance = 0; camera.x = 0;
+  score = 0; coinCount = 0; distance = 0; camera.x = 0; camera.y = 0;
   gameOver = false; screenShake = 0; gameRunning = true; levelTimer = LEVEL_TIME_LIMIT;
   comboCount = 0; comboTimer = 0;
   killstreakCount = 0; killstreakWindow = 0; killstreakTimer = 0; killstreakPopup = 0;
   lastEnemySpawnX = 0; inBonusRoom = false; bonusRoomPipe = null;
   bonusCoins = []; bonusBlocks = []; bonusExitCooldown = 0;
-  fireballs = []; powerUpPopups = [];
+  fireballs = []; powerUpPopups = []; maxHeight = 0;
   currentLevel = level;
-  // Multiplayer: shared lives = number of players × 3
   lives = (1 + Object.keys(mp.players).length) * 3;
-  buildLevel(level);
+  if (gameMode === 'hochhinaus') buildVerticalLevel(); else buildLevel(level);
   Math.random = _origRandom;
   mp.seed = null;
   mp.periodicSeed = seed;
@@ -2643,7 +2875,7 @@ function mpStartLevel(level, seed) {
   document.getElementById('topBtns').style.display = '';
   document.getElementById('controls').style.display = 'flex';
   document.getElementById('rightGroup').style.display = '';
-  document.getElementById('enterBtn').style.display = '';
+  document.getElementById('enterBtn').style.display = gameMode === 'pixelland' ? '' : 'none';
   document.getElementById('fireBtn').style.display = '';
   if (mp.connected && !mp.host) {
     document.getElementById('restartTouchBtn').style.display = 'none';
@@ -2651,9 +2883,14 @@ function mpStartLevel(level, seed) {
     document.getElementById('restartTouchBtn').style.display = '';
   }
   document.getElementById('mapTouchBtn').style.display = '';
-  document.getElementById('mapTouchBtn').textContent = 'LOBBY';
+  document.getElementById('mapTouchBtn').textContent = gameMode === 'pixelland' ? 'KARTE' : 'MENÜ';
   document.getElementById('statusBar').style.display = '';
   document.getElementById('powerUpBar').style.display = '';
+  if (gameMode === 'hochhinaus') {
+    document.getElementById('timerDisplay').parentElement.innerHTML = 'HÖHE <span id="timerDisplay">0m</span>';
+  } else {
+    document.getElementById('timerDisplay').parentElement.innerHTML = 'ZEIT <span id="timerDisplay">250</span>';
+  }
   goFullscreen();
   gameScreen = 'playing';
 }
@@ -2833,6 +3070,12 @@ function mpHandleEvent(event, data) {
       document.getElementById('mpMsgOverlay').classList.remove('hidden');
       setTimeout(() => { document.getElementById('mpMsgOverlay').classList.add('hidden'); }, 3000);
       break;
+    case 'player_bounce':
+      if (gameRunning && !player.dead) {
+        player.vx += data.vx || 0;
+        player.vy += data.vy || 0;
+      }
+      break;
   }
 }
 function updateMpPlayerList() {
@@ -2916,10 +3159,13 @@ function requestNewGame() {
 }
 function newGame() {
   document.getElementById('newGameConfirm').style.display = 'none';
+  gameMode = 'pixelland';
+  document.getElementById('timerDisplay').parentElement.innerHTML = 'ZEIT <span id="timerDisplay">250</span>';
   for (const l of levels) l.completed = false;
   cheatUnlockAll = false;
   document.getElementById('unlockAllBtn').textContent = 'ALLE LEVEL FREISCHALTEN: AUS';
   document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('modeScreen').classList.add('hidden');
   document.getElementById('singleplayerScreen').classList.add('hidden');
   document.getElementById('gameOverScreen').classList.add('hidden');
   document.getElementById('helpScreen').classList.add('hidden');
@@ -2941,6 +3187,7 @@ function restartFromGameOver() {
     if (mp.host) { document.getElementById('gameOverScreen').classList.add('hidden'); restartGame(); }
     return;
   }
+  if (gameMode === 'hochhinaus') { startHochHinaus(); return; }
   resetGame();
 }
 function showHelp() {
@@ -2986,19 +3233,63 @@ document.getElementById('unlockAllBtn').addEventListener('touchend',e=>{e.preven
 // ---- Singleplayer Screen ----
 document.getElementById('spBtn').addEventListener('click', ()=>{
   document.getElementById('startScreen').classList.add('hidden');
-  document.getElementById('singleplayerScreen').classList.remove('hidden');
+  document.getElementById('modeScreen').classList.remove('hidden');
 });
 document.getElementById('spBtn').addEventListener('touchend', e=>{e.preventDefault();
   document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('modeScreen').classList.remove('hidden');
+});
+// ---- Mode Screen ----
+function startHochHinaus() {
+  gameMode = 'hochhinaus';
+  document.getElementById('modeScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('singleplayerScreen').classList.add('hidden');
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('mapScreen').classList.add('hidden');
+  currentLevel = 0;
+  resetGame();
+  document.getElementById('topBtns').style.display = '';
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('rightGroup').style.display = '';
+  document.getElementById('enterBtn').style.display = 'none';
+  document.getElementById('fireBtn').style.display = '';
+  document.getElementById('restartTouchBtn').style.display = '';
+  document.getElementById('mapTouchBtn').style.display = '';
+  document.getElementById('mapTouchBtn').textContent = 'MENÜ';
+  document.getElementById('statusBar').style.display = '';
+  document.getElementById('powerUpBar').style.display = '';
+  document.getElementById('timerDisplay').parentElement.innerHTML = 'HÖHE <span id="timerDisplay">0m</span>';
+  goFullscreen();
+  gameScreen = 'playing';
+}
+document.getElementById('modePixelLandBtn').addEventListener('click', ()=>{
+  gameMode = 'pixelland';
+  document.getElementById('modeScreen').classList.add('hidden');
   document.getElementById('singleplayerScreen').classList.remove('hidden');
+});
+document.getElementById('modePixelLandBtn').addEventListener('touchend', e=>{e.preventDefault();
+  gameMode = 'pixelland';
+  document.getElementById('modeScreen').classList.add('hidden');
+  document.getElementById('singleplayerScreen').classList.remove('hidden');
+});
+document.getElementById('modeHochBtn').addEventListener('click', startHochHinaus);
+document.getElementById('modeHochBtn').addEventListener('touchend', e=>{e.preventDefault();startHochHinaus();});
+document.getElementById('modeBackBtn').addEventListener('click', ()=>{
+  document.getElementById('modeScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
+document.getElementById('modeBackBtn').addEventListener('touchend', e=>{e.preventDefault();
+  document.getElementById('modeScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
 });
 document.getElementById('spBackBtn').addEventListener('click', ()=>{
   document.getElementById('singleplayerScreen').classList.add('hidden');
-  document.getElementById('startScreen').classList.remove('hidden');
+  document.getElementById('modeScreen').classList.remove('hidden');
 });
 document.getElementById('spBackBtn').addEventListener('touchend', e=>{e.preventDefault();
   document.getElementById('singleplayerScreen').classList.add('hidden');
-  document.getElementById('startScreen').classList.remove('hidden');
+  document.getElementById('modeScreen').classList.remove('hidden');
 });
 // ---- Multiplayer UI ----
 document.getElementById('mpBtn').addEventListener('click', ()=>{

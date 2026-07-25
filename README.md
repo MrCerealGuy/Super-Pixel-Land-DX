@@ -1,6 +1,6 @@
 # Super Pixel Land DX
 
-Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum-System, Touch-Steuerung und **Multiplayer** (dedizierter WebSocket-Server).
+Ein Jump'n'Run im GameBoy-Stil mit zwei Spielmodi – **Pixel-Land** (horizontal, Levelauswahl, Timer) und **Hoch hinaus** (vertikale Endloskletterer, Höhe als Score) – Bonus-Raum-System, Touch-Steuerung und **Multiplayer** (dedizierter WebSocket-Server).
 
 ## Steuerung
 
@@ -23,9 +23,29 @@ Ein Jump'n'Run im GameBoy-Stil mit Level-Auswahl auf einer Weltkarte, Bonus-Raum
 | ↓ | Röhre betreten |
 | FEUER | Feuerball (mit Feuer-Powerup) |
 | ↻ | Level neustarten |
-| KARTE | Zurück zur Karte |
+| KARTE/MENÜ | Zurück zur Karte bzw. Startscreen |
 
 ## Spiel-Mechaniken
+
+### Spielmodi
+
+#### Pixel-Land (horizontal)
+- 5 Level: WIESE, HOHLE, HIMMEL, VULKAN, FESTUNG
+- Navigation mit ◀ ▶ auf der Karte, Sprung zum Betreten
+- Nächstes Level erst nach Abschluss des vorherigen freigeschaltet
+- Zielfahnenmast am Ende jedes Levels – je höher getroffen, desto mehr Bonus-Punkte (1000–8000)
+
+#### Hoch hinaus (vertikal)
+- Endlosmodus – so hoch wie möglich klettern
+- Score = höchste erreichte Höhe × 10
+- Biome wechseln dynamisch mit der Höhe: Wiese → Höhle → Himmel → Vulkan
+- **Nur Fluggegner** (ab Stockwerk 3, Dichte steigt mit Höhe)
+- Schmale feste Plattformen (16–32 px) + viele bewegliche Plattformen (One-Way: von unten hindurchspringbar)
+- Powerups spawnen direkt (keine Fragezeichen-Blöcke)
+- Pilz-Powerups bleiben stationär
+- Checkpoints alle 20 Stockwerke
+- 3-Sekunden-Countdown vor dem Start
+- Spieler-Bounce im Multiplayer: Gegenseitig runterschubsen
 
 ### Level & Weltkarte
 - 5 Level: WIESE, HOHLE, HIMMEL, VULKAN, FESTUNG
@@ -129,13 +149,16 @@ Der Server läuft standardmäßig auf Port **8080** (HTTP + WebSocket auf einem 
 
 ### Features
 
+- **Zwei Spielmodi**: Pixel-Land (horizontal) und Hoch hinaus (vertikal)
 - **Shared World**: Alle Spieler sehen sich gegenseitig, Münzen und Gegner werden synchronisiert
 - **Raum-Verwaltung**: 4-Zeichen-Codes, max. 4 Spieler pro Raum
 - **Host-Übergabe**: Fällt der Host aus, übernimmt der nächste Spieler
-- **Remote Player**: 80% Deckkraft + Namensschild über dem Spieler
+- **Remote Player**: 80% Deckkraft + Namensschild (P1/P2/P3/P4) über dem Spieler
+- **Minimap**: Übersichtskarte oben im Multiplayer
 - **Event-Sync**: Geteilte Münzen (`coin_collected`), Gegner-Kills (`enemy_killed`), Block-Aktivierungen (`quest_block_hit`)
 - **Deterministische Level-Genese**: Seeded PRNG (Mulberry32) stellt sicher, dass alle Clients dasselbe Level sehen
 - **State-Übertragung**: 20 fps Spieler-State-Broadcast vom Server
+- **Player Bounce**: Gegenseitiges Schubsen im Hoch hinaus Multiplayer
 - **Remote-Zugriff**: Server von außen via Port-Forwarding oder Tunnel erreichbar
 
 ### Protokoll-Übersicht
@@ -144,7 +167,7 @@ Der Server läuft standardmäßig auf Port **8080** (HTTP + WebSocket auf einem 
 |----------|-----|-------------|
 | Client → Server | `join` | Raum beitreten/erstellen |
 | Client → Server | `player_state` | Eigene Position/Daten |
-| Client → Server | `game_event` | Aktion (Münze, Gegner, Block, Sieg) |
+| Client → Server | `game_event` | Aktion (Münze, Gegner, Block, Bounce, Sieg) |
 | Client → Server | `start_level` | Level starten (nur Host) |
 | Client → Server | `ping` | Verbindung testen |
 | Server → Client | `joined` | Verbunden + Spielerdaten |
