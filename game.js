@@ -1010,7 +1010,7 @@ function restartGame() {
 }
 
 function returnToMap() {
-  stopStarMusic();
+  stopStarMusic(); stopKillstreakMusic();
   keys.jumpPressed=false; keys.jump=false;
   keys.shootPressed=false; keys.shoot=false;
   keys.left=false; keys.right=false; keys.down=false;
