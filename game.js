@@ -2999,8 +2999,8 @@ function mpHandleMessage(msg) {
       document.getElementById('mpMsgOverlay').classList.add('hidden');
       document.getElementById('topBtns').style.display = 'none';
       document.getElementById('controls').style.display = 'none';
-      document.getElementById('statusBar').style.display = '';
-      document.getElementById('powerUpBar').style.display = '';
+      document.getElementById('statusBar').style.display = 'none';
+      document.getElementById('powerUpBar').style.display = 'none';
       break;
     case 'error':
       document.getElementById('mpError').textContent = msg.message;
