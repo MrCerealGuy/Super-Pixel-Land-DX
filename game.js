@@ -1490,17 +1490,18 @@ function update() {
     lastEnemySpawnX = Math.floor(p.x / 400) * 400;
     const startX = lastEnemySpawnX + 200;
     const endX = startX + 300;
-    const eType = getBiomeAt(startX) >= BIOME.SKY ? ['ground','big'] : ['ground'];
+    // Use fixed position-based biome (not getBiomeAt which uses level biome for x<800)
+    const sBiome = startX < 2200 ? BIOME.MEADOW : startX < 5000 ? BIOME.CAVE : startX < 7500 ? BIOME.SKY : BIOME.VOLCANO;
     for (let x=startX; x<endX; x+=100+Math.random()*60) {
       if (levelGaps.some(g=>x>=g[0]&&x<g[1])) continue;
       enemies.push({x,y:H-28,w:12,h:12,vx:-0.7-Math.random()*0.5,vy:0,type:'ground',alive:true,hp:1,frame:0});
     }
-    if (getBiomeAt(startX) !== BIOME.MEADOW) {
+    if (sBiome !== BIOME.MEADOW) {
       for (let x=startX+50; x<endX; x+=180+Math.random()*80) {
         enemies.push({x,y:H-60-Math.random()*40,w:12,h:12,vx:-0.5-Math.random()*0.3,vy:0,type:'flying',alive:true,hp:1,frame:0,flyOff:0,flyPhase:Math.random()*Math.PI*2});
       }
     }
-    if (getBiomeAt(startX) >= BIOME.SKY) {
+    if (sBiome >= BIOME.SKY) {
       for (let x=startX+80; x<endX; x+=250+Math.random()*100) {
         enemies.push({x,y:H-32,w:18,h:16,vx:-0.4-Math.random()*0.3,vy:0,type:'big',alive:true,hp:2,frame:0});
       }
