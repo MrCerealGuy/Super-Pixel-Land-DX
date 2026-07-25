@@ -1571,7 +1571,7 @@ function update() {
     if (e.vy>MAX_FALL) e.vy=MAX_FALL;
     e.x+=e.vx;
     const eRect={x:e.x, y:e.y+(e.type==='flying'?e.flyOff:0), w:e.w, h:e.h};
-    if (e.type==='flying') {
+    if (e.type==='flying' && gameMode==='hochhinaus') {
       if (e.x < 10) { e.x = 10; e.vx = Math.abs(e.vx); }
       else if (e.x > W - e.w - 10) { e.x = W - e.w - 10; e.vx = -Math.abs(e.vx); }
     }
