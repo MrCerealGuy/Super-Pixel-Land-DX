@@ -2666,40 +2666,79 @@ function draw() {
   // Multiplayer minimap
   if (mp.connected && gameScreen === 'playing' && !inBonusRoom) {
     const WW = W * S, HH = H * S;
-    const barY = 3, barH = 3, pad = 16;
-    const barW = WW - pad * 2, barLeft = pad;
-    const levelLen = 10000;
-    // Bar background + border
-    ctx.fillStyle = COL.darkest;
-    ctx.fillRect(barLeft, barY, barW, barH);
-    ctx.fillStyle = COL.light;
-    ctx.fillRect(barLeft, barY, barW, 1);
-    ctx.fillRect(barLeft, barY, 1, barH);
-    ctx.fillRect(barLeft + barW - 1, barY, 1, barH);
-    ctx.fillRect(barLeft, barY + barH - 1, barW, 1);
-    // Draw level endpoint markers
-    ctx.fillStyle = COL.star;
-    ctx.fillRect(barLeft - 1, barY + 1, 2, barH - 2);
-    ctx.fillRect(barLeft + barW - 1, barY + 1, 2, barH - 2);
-    // Helper: get short name
     const shortName = (full) => 'P' + (full || '').replace(/.*\s(\d+).*/, '$1');
-    // Local player
-    const lx = Math.min(Math.max(barLeft + (player.x / levelLen) * barW, barLeft + 2), barLeft + barW - 2);
-    ctx.fillStyle = COL.white;
-    ctx.fillRect(lx - 1, barY - 2, 3, barH + 4);
-    const ln = shortName(mp.localName);
-    drawPixelText(ln, Math.round(lx - ln.length * 2.5), barY + barH + 2, COL.white);
-    // Remote players
-    for (const pid in mp.players) {
-      const rp = mp.players[pid];
-      if (!rp || rp.x == null || rp.inBonusRoom) continue;
-      const rx = Math.min(Math.max(barLeft + (rp.x / levelLen) * barW, barLeft + 2), barLeft + barW - 2);
-      ctx.fillStyle = COL.yellow;
-      ctx.fillRect(rx - 1, barY - 2, 3, barH + 4);
-      if (rp.name) {
-        const rn = shortName(rp.name);
-        const rty = barY + barH + 2;
-        drawPixelText(rn, Math.round(rx - rn.length * 2.5), rty, COL.yellow);
+    if (gameMode === 'hochhinaus') {
+      // Vertical bar on the right side
+      const pad = 4;
+      const barX = WW - pad - 3, barTop = pad + 2, barH = HH - pad * 2 - 10, barW = 3;
+      const yMin = -VERT_LEVEL_HEIGHT + H, yMax = H;
+      // Bar background + border
+      ctx.fillStyle = COL.darkest;
+      ctx.fillRect(barX, barTop, barW, barH);
+      ctx.fillStyle = COL.light;
+      ctx.fillRect(barX, barTop, barW, 1);
+      ctx.fillRect(barX, barTop + barH - 1, barW, 1);
+      ctx.fillRect(barX, barTop, 1, barH);
+      ctx.fillRect(barX + barW - 1, barTop, 1, barH);
+      // Ground marker at bottom
+      ctx.fillStyle = COL.star;
+      ctx.fillRect(barX + 1, barTop + barH - 2, barW - 2, 2);
+      function mapY(py) {
+        const t = Math.min(Math.max((yMax - py) / (yMax - yMin), 0), 1);
+        return barTop + barH - 2 - Math.round(t * (barH - 4));
+      }
+      // Local player
+      const ly = mapY(player.y);
+      ctx.fillStyle = COL.white;
+      ctx.fillRect(barX - 2, ly - 1, barW + 4, 3);
+      const ln = shortName(mp.localName);
+      drawPixelText(ln, barX - 2 - ln.length * 5 - 1, ly - 3, COL.white);
+      // Remote players
+      for (const pid in mp.players) {
+        const rp = mp.players[pid];
+        if (!rp || rp.y == null || rp.inBonusRoom) continue;
+        const ry = mapY(rp.y);
+        ctx.fillStyle = COL.yellow;
+        ctx.fillRect(barX - 2, ry - 1, barW + 4, 3);
+        if (rp.name) {
+          const rn = shortName(rp.name);
+          drawPixelText(rn, barX - 2 - rn.length * 5 - 1, ry - 3, COL.yellow);
+        }
+      }
+    } else {
+      // Horizontal bar at the top (Pixel-Land)
+      const barY = 3, barH = 3, pad = 16;
+      const barW = WW - pad * 2, barLeft = pad;
+      const levelLen = 10000;
+      // Bar background + border
+      ctx.fillStyle = COL.darkest;
+      ctx.fillRect(barLeft, barY, barW, barH);
+      ctx.fillStyle = COL.light;
+      ctx.fillRect(barLeft, barY, barW, 1);
+      ctx.fillRect(barLeft, barY, 1, barH);
+      ctx.fillRect(barLeft + barW - 1, barY, 1, barH);
+      ctx.fillRect(barLeft, barY + barH - 1, barW, 1);
+      // Draw level endpoint markers
+      ctx.fillStyle = COL.star;
+      ctx.fillRect(barLeft - 1, barY + 1, 2, barH - 2);
+      ctx.fillRect(barLeft + barW - 1, barY + 1, 2, barH - 2);
+      // Local player
+      const lx = Math.min(Math.max(barLeft + (player.x / levelLen) * barW, barLeft + 2), barLeft + barW - 2);
+      ctx.fillStyle = COL.white;
+      ctx.fillRect(lx - 1, barY - 2, 3, barH + 4);
+      const ln = shortName(mp.localName);
+      drawPixelText(ln, Math.round(lx - ln.length * 2.5), barY + barH + 2, COL.white);
+      // Remote players
+      for (const pid in mp.players) {
+        const rp = mp.players[pid];
+        if (!rp || rp.x == null || rp.inBonusRoom) continue;
+        const rx = Math.min(Math.max(barLeft + (rp.x / levelLen) * barW, barLeft + 2), barLeft + barW - 2);
+        ctx.fillStyle = COL.yellow;
+        ctx.fillRect(rx - 1, barY - 2, 3, barH + 4);
+        if (rp.name) {
+          const rn = shortName(rp.name);
+          drawPixelText(rn, Math.round(rx - rn.length * 2.5), barY + barH + 2, COL.yellow);
+        }
       }
     }
   }
