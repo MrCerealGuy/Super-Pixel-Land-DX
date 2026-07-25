@@ -260,7 +260,7 @@ let camera = { x: 0, y: 0 };
 let drawCy = 0;
 let platforms = [], coins = [], enemies = [], particles = [], movingPlats = [];
 let questBlocks = [], powerups = [], pipes = [], checkpoints = [], powerUpPopups = [];
-let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0;
+let score = 0, coinCount = 0, lives = 3, distance = 0, highScore = 0, highScoreHoch = 0;
 let gameMode = 'pixelland';
 const VERT_LEVEL_HEIGHT = 6000;
 let maxHeight = 0;
@@ -358,8 +358,10 @@ function stopKillstreakMusic() {
   }
 }
 
-function saveHighScore() { try { localStorage.setItem('splDxHS', highScore); } catch(e) {} }
-function loadHighScore() { try { const v = localStorage.getItem('splDxHS'); if (v) highScore = parseInt(v)||0; return highScore; } catch(e) { return 0; } }
+function saveHighScore() { try { localStorage.setItem('splDxHS', highScore); localStorage.setItem('splDxHSHoch', highScoreHoch); } catch(e) {} }
+function loadHighScore() { try { highScore = parseInt(localStorage.getItem('splDxHS'))||0; highScoreHoch = parseInt(localStorage.getItem('splDxHSHoch'))||0; } catch(e) {} return gameMode==='hochhinaus'?highScoreHoch:highScore; }
+function getHighScore() { return gameMode==='hochhinaus' ? highScoreHoch : highScore; }
+function setHighScore(v) { if (gameMode==='hochhinaus') highScoreHoch=v; else highScore=v; saveHighScore(); }
 
 function saveProgress() {
   try {
@@ -1167,8 +1169,8 @@ function update() {
         document.getElementById('finalScore').textContent='PUNKTE: '+score;
         document.getElementById('finalCoins').textContent='MUNZEN: '+coinCount;
         document.getElementById('finalDist').textContent='STRECKE: '+distance+'m';
-        if (score>highScore) { highScore=score; saveHighScore(); document.getElementById('finalHS').textContent='NEUER HIGHSCORE!'; }
-        else document.getElementById('finalHS').textContent='HIGHSCORE: '+highScore;
+        if (score>getHighScore()) { setHighScore(score); document.getElementById('finalHS').textContent='NEUER HIGHSCORE!'; }
+        else document.getElementById('finalHS').textContent='HIGHSCORE: '+getHighScore();
         document.getElementById('gameOverScreen').classList.remove('hidden');
         if (mp.connected) {
           if (mp.host) { document.getElementById('mpGameOverMsg').classList.add('hidden'); document.getElementById('restartBtn').style.display = ''; }
@@ -1785,8 +1787,8 @@ function playerDie(fromPit) {
     } else {
       document.getElementById('finalDist').textContent='STRECKE: '+distance+'m';
     }
-    if (score>highScore) { highScore=score; saveHighScore(); document.getElementById('finalHS').textContent='NEUER HIGHSCORE!'; }
-    else document.getElementById('finalHS').textContent='HIGHSCORE: '+highScore;
+    if (score>getHighScore()) { setHighScore(score); document.getElementById('finalHS').textContent='NEUER HIGHSCORE!'; }
+    else document.getElementById('finalHS').textContent='HIGHSCORE: '+getHighScore();
     document.getElementById('gameOverScreen').classList.remove('hidden');
     if (mp.connected) {
       if (mp.host) { document.getElementById('mpGameOverMsg').classList.add('hidden'); document.getElementById('restartBtn').style.display = ''; }
@@ -1816,7 +1818,7 @@ function playerWins(bonus) {
   stopStarMusic(); stopKillstreakMusic(); killstreakCount=0; killstreakWindow=0; killstreakTimer=0; killstreakPopup=0; player.won=true; sfxWin();
   score += bonus || 2000;
   document.getElementById('scoreDisplay').textContent=String(score).padStart(6,'0');
-  if (score>highScore) { highScore=score; saveHighScore(); }
+  if (score>getHighScore()) setHighScore(score);
   levels[currentLevel].completed = true;
   // Notify other players
   if (mp.connected) {
@@ -3082,8 +3084,8 @@ function mpHandleEvent(event, data) {
         document.getElementById('finalScore').textContent = 'PUNKTE: ' + score;
         document.getElementById('finalCoins').textContent = 'MUNZEN: ' + coinCount;
         document.getElementById('finalDist').textContent = 'STRECKE: ' + distance + 'm';
-        if (score > highScore) { highScore = score; saveHighScore(); document.getElementById('finalHS').textContent = 'NEUER HIGHSCORE!'; }
-        else document.getElementById('finalHS').textContent = 'HIGHSCORE: ' + highScore;
+        if (score > getHighScore()) { setHighScore(score); document.getElementById('finalHS').textContent = 'NEUER HIGHSCORE!'; }
+        else document.getElementById('finalHS').textContent = 'HIGHSCORE: ' + getHighScore();
         document.getElementById('gameOverScreen').classList.remove('hidden');
         if (mp.host) { document.getElementById('mpGameOverMsg').classList.add('hidden'); document.getElementById('restartBtn').style.display = ''; }
         else { document.getElementById('mpGameOverMsg').classList.remove('hidden'); document.getElementById('restartBtn').style.display = 'none'; }
@@ -3526,7 +3528,8 @@ resize();
 
 // Show high score on start
 loadHighScore();
-document.getElementById('hsText').textContent = highScore > 0 ? 'HIGHSCORE: '+highScore : '';
+document.getElementById('hsText').textContent = highScore > 0 ? 'HIGHSCORE PIXEL-LAND: '+highScore : '';
+document.getElementById('hsTextHoch').textContent = highScoreHoch > 0 ? 'HIGHSCORE HOCH HINAUS: '+highScoreHoch : '';
 updateContinueBtn();
 document.getElementById('buildVersion').textContent = (typeof BUILD_VERSION !== 'undefined' ? BUILD_VERSION : '');
 goFullscreen();
