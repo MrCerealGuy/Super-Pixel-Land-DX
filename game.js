@@ -1001,7 +1001,7 @@ function resetGame() {
 
 function restartGame() {
   if (mp.connected) {
-    if (mp.host) mpSend({ type: 'start_level', level: currentLevel });
+    if (mp.host) mpSend({ type: 'start_level', level: currentLevel, mode: gameMode });
     return;
   }
   if (gameScreen === 'map') { newGame(); return; }
