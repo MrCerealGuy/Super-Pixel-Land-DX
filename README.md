@@ -230,3 +230,14 @@ chmod +x update-version.sh && ./update-version.sh
 ```bash
 git log -1 --format="const BUILD_VERSION = '%h %cd';" --date=format:%Y-%m-%d > version.js && npm install
 ```
+
+### Android APK
+
+Die App kann als APK über **PWABuilder** (https://www.pwabuilder.com) verpackt werden:
+
+1. Die URL des Spiels eingeben (z. B. `https://super-pixel-land-dx.onrender.com`)
+2. **Package for stores** → **Android** wählen
+3. APK herunterladen (ca. 10 MB)
+4. Auf dem Android-Gerät die `.apk`-Datei installieren (ggf. "Unbekannte Quellen" erlauben)
+
+PWABuilder verwendet `manifest.json` und die Icons (`icon-192.png`, `icon-512.png`) aus dem Repository, um die APK zu generieren. Nach Icon-Änderungen die APK einfach neu bauen – PWABuilder greift stets auf die aktuelle gehostete Version zu.
